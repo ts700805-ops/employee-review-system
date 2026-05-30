@@ -1,10 +1,3 @@
-收到，我已經將首頁圖片的佈局調整為「自動適應」的模式，圖片會保持適當的比例並佈滿您的視覺區域，不會超出頁面導致內容被裁切或過大。
-
-同時，我修正了選單在某些螢幕寬度下無法點擊的問題，確保左側選項能正常切換。
-
-請直接複製這段完整的程式碼：
-
-```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -12,27 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>員工評核系統</title>
   <style>
-    :root { --primary-color: #0a3d2e; --secondary-color: #d4af37; --bg-color: #fffbf0; --text-color: #333; }
+    :root { 
+      --primary-color: #0a3d2e; 
+      --secondary-color: #d4af37; 
+      --bg-color: #e8f5e9; /* 全頁淡綠色 */
+      --text-color: #333; 
+    }
     body { margin: 0; padding: 0; font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; height: 100vh; overflow: hidden; }
     
-    /* 側邊欄固定在左側，並設置較高的層級以確保可點擊 */
-    .sidebar { width: 260px; flex-shrink: 0; background-color: var(--primary-color); color: white; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.3); z-index: 1000; }
+    /* 側邊欄 */
+    .sidebar { width: 260px; flex-shrink: 0; background-color: var(--primary-color); color: white; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 1000; }
     .sidebar-header { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .sidebar-header h2 { margin: 0; font-size: 22px; color: var(--secondary-color); letter-spacing: 2px; }
     .sidebar-menu { list-style: none; padding: 0; margin: 20px 0 0 0; }
     .sidebar-menu li { padding: 18px 25px; cursor: pointer; display: flex; align-items: center; font-size: 16px; font-weight: 500; border-left: 4px solid transparent; transition: all 0.3s ease; }
-    .sidebar-menu li:hover { background-color: rgba(255,255,255,0.05); color: var(--secondary-color); }
-    .sidebar-menu li.active { background-color: rgba(255,255,255,0.1); color: var(--secondary-color); border-left-color: var(--secondary-color); }
+    .sidebar-menu li:hover { background-color: rgba(255,255,255,0.1); color: var(--secondary-color); }
+    .sidebar-menu li.active { background-color: rgba(255,255,255,0.2); color: var(--secondary-color); border-left-color: var(--secondary-color); }
     
     .main-content { flex: 1; padding: 40px; overflow-y: auto; position: relative; }
     .page { display: none; }
     .page.active { display: block; }
-    .card { background: white; border-radius: 15px; padding: 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid rgba(212, 175, 55, 0.2); max-width: 900px; margin: 0 auto; }
+    .card { background: white; border-radius: 15px; padding: 35px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 900px; margin: 0 auto; }
     h1 { color: var(--primary-color); margin-top: 0; margin-bottom: 30px; font-size: 28px; }
     
-    /* 圖片容器調整：自動適應容器寬度，並保持頁面整潔 */
-    .welcome-image-container { width: 100%; max-width: 800px; margin: 0 auto 30px auto; border-radius: 12px; border: 3px solid var(--secondary-color); background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .welcome-image { width: 100%; height: auto; display: block; object-fit: contain; }
+    /* 移除邊框與背景，直接呈現照片 */
+    .welcome-image-container { width: 100%; max-width: 800px; margin: 0 auto 30px auto; display: flex; align-items: center; justify-content: center; }
+    .welcome-image { width: 100%; height: auto; display: block; }
     
     .form-group { margin-bottom: 25px; }
     .form-control { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
@@ -41,7 +39,7 @@
     .data-table th, .data-table td { padding: 15px 20px; text-align: left; border-bottom: 1px solid #eee; }
     .data-table th { background-color: var(--primary-color); color: white; }
     .btn-delete { background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-    .upload-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 2px dashed var(--secondary-color); margin-bottom: 25px; }
+    .upload-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px dashed #ccc; margin-bottom: 25px; }
   </style>
 </head>
 <body>
@@ -140,5 +138,3 @@
   </script>
 </body>
 </html>
-
-```
