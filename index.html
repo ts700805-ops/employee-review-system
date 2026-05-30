@@ -4,66 +4,94 @@
   <meta charset="UTF-8">
   <title>員工評核系統</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #f0f2f5; }
+    body { font-family: sans-serif; display: flex; margin: 0; }
+    nav { width: 200px; background: #0a3d2e; color: white; height: 100vh; padding: 20px; }
+    nav div { padding: 10px; cursor: pointer; }
+    main { flex: 1; padding: 20px; background: #f4f7f6; }
     .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .btn { padding: 10px 20px; cursor: pointer; background: #0a3d2e; color: white; border: none; border-radius: 4px; }
-    input, textarea { width: 100%; padding: 8px; margin: 10px 0; box-sizing: border-box; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    .btn { padding: 8px 16px; cursor: pointer; background: #0a3d2e; color: white; border: none; border-radius: 4px; }
   </style>
 </head>
 <body>
 
-  <div class="card">
-    <h3>📷 上傳首頁照片</h3>
-    <input type="file" id="photoInput" accept="image/*">
-    <button class="btn" onclick="uploadPhoto()">上傳圖片</button>
-  </div>
+<nav>
+  <div onclick="showPage('home')">🏠 首頁</div>
+  <div onclick="showPage('admin')">⚙️ 管理後台</div>
+</nav>
 
-  <div class="card">
-    <h3>👥 管理員工配置</h3>
-    <input type="text" id="leaderName" placeholder="組長名稱">
-    <textarea id="memberList" placeholder="組員名單 (逗號分隔)"></textarea>
-    <button class="btn" onclick="addTeam()">儲存配置</button>
-  </div>
+<main id="content">
+  </main>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAPBXphipNLgAHuqPg0HZ-J8HIqc9hQHc",
-      authDomain: "employee-review-system-4a32d.firebaseapp.com",
-      databaseURL: "https://employee-review-system-4a32d-default-rtdb.firebaseio.com",
-      projectId: "employee-review-system-4a32d",
-      storageBucket: "employee-review-system-4a32d.appspot.com",
-      messagingSenderId: "855967203605",
-      appId: "1:855967203605:web:b80727517c38b28229291c"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyAPBXphipNLgAHuqPg0HZ-J8HIqc9hQHc",
+    databaseURL: "https://employee-review-system-4a32d-default-rtdb.firebaseio.com",
+    projectId: "employee-review-system-4a32d"
+  };
+  const db = getDatabase(initializeApp(firebaseConfig));
 
-    const db = getDatabase(initializeApp(firebaseConfig));
+  // 頁面切換邏輯
+  window.showPage = (page) => {
+    const content = document.getElementById('content');
+    if (page === 'home') {
+      content.innerHTML = `<h1>首頁</h1><img id="displayImg" style="max-width:300px;">`;
+      onValue(ref(db, 'homepage/photo'), (snapshot) => {
+        document.getElementById('displayImg').src = snapshot.val() || '';
+      });
+    } else {
+      content.innerHTML = `
+        <div class="card">
+          <h3>📷 照片管理</h3>
+          <input type="file" id="photoInput" accept="image/*">
+          <button class="btn" onclick="uploadPhoto()">更新首頁照片</button>
+        </div>
+        <div class="card">
+          <h3>👥 員工名單管理</h3>
+          <input type="text" id="leaderName" placeholder="組長名稱">
+          <input type="text" id="memberList" placeholder="組員名單(逗號分隔)">
+          <button class="btn" onclick="addTeam()">新增員工配置</button>
+          <table id="teamTable" style="margin-top:20px;"></table>
+        </div>`;
+      renderTeams();
+    }
+  };
 
-    window.uploadPhoto = () => {
-      const file = document.getElementById('photoInput').files[0];
-      if(!file) return alert('請選擇檔案');
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        // 使用 update 而不是 set，避免覆蓋整個節點
-        set(ref(db, 'homepage/photo'), e.target.result)
-          .then(() => alert('照片上傳成功！'))
-          .catch(err => alert('失敗: ' + err.message));
-      };
-      reader.readAsDataURL(file);
-    };
+  window.uploadPhoto = () => {
+    const file = document.getElementById('photoInput').files[0];
+    const reader = new FileReader();
+    reader.onload = e => set(ref(db, 'homepage/photo'), e.target.result).then(() => alert('照片更新成功！'));
+    reader.readAsDataURL(file);
+  };
 
-    window.addTeam = () => {
-      const leader = document.getElementById('leaderName').value;
-      const members = document.getElementById('memberList').value;
-      if(!leader || !members) return alert('請填寫完整');
-      
-      set(ref(db, 'teams/' + leader), members)
-        .then(() => alert('配置儲存成功！'))
-        .catch(err => alert('失敗: ' + err.message));
-    };
-  </script>
+  window.addTeam = () => {
+    const leader = document.getElementById('leaderName').value;
+    const members = document.getElementById('memberList').value;
+    set(ref(db, 'teams/' + leader), members).then(() => alert('儲存成功！'));
+  };
+
+  function renderTeams() {
+    onValue(ref(db, 'teams'), (snapshot) => {
+      const data = snapshot.val() || {};
+      let html = `<tr><th>組長</th><th>組員(可編輯)</th><th>操作</th></tr>`;
+      for (let leader in data) {
+        html += `<tr><td>${leader}</td><td><input id="edit_${leader}" value="${data[leader]}"></td>
+                 <td><button onclick="saveEdit('${leader}')">儲存</button></td></tr>`;
+      }
+      document.getElementById('teamTable').innerHTML = html;
+    });
+  }
+
+  window.saveEdit = (leader) => {
+    const val = document.getElementById('edit_' + leader).value;
+    set(ref(db, 'teams/' + leader), val).then(() => alert('修改成功！'));
+  };
+
+  showPage('home'); // 預設頁面
+</script>
 </body>
 </html>
