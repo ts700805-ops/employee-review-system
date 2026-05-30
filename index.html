@@ -1,8 +1,3 @@
-為了確保照片能以更大尺寸呈現，且穩定地保持在首頁，我已經調整了 CSS 的 `welcome-image-container` 設定，並強制設定照片在容器內以「完整呈現但放大」的比例顯示。同時，我確認了 `z-index` 層級設定，以確保側邊選單完全恢復點選功能。
-
-請複製以下最新的完整程式碼：
-
-```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -12,8 +7,8 @@
   <style>
     :root { --primary-color: #0a3d2e; --secondary-color: #d4af37; --bg-color: #fffbf0; --text-color: #333; }
     body { margin: 0; padding: 0; font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; height: 100vh; overflow: hidden; }
-    /* 側邊欄高層級，確保可點擊 */
-    .sidebar { width: 260px; background-color: var(--primary-color); color: white; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.3); z-index: 1000; position: relative; }
+    /* 側邊欄高層級，確保絕對可點擊 */
+    .sidebar { width: 260px; background-color: var(--primary-color); color: white; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.3); z-index: 9999; position: relative; }
     .sidebar-header { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .sidebar-header h2 { margin: 0; font-size: 22px; color: var(--secondary-color); letter-spacing: 2px; }
     .sidebar-menu { list-style: none; padding: 0; margin: 20px 0 0 0; }
@@ -24,12 +19,12 @@
     .main-content { flex: 1; padding: 40px; overflow-y: auto; position: relative; z-index: 1; }
     .page { display: none; }
     .page.active { display: block; }
-    .card { background: white; border-radius: 15px; padding: 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid rgba(212, 175, 55, 0.2); max-width: 1000px; margin: 0 auto; }
+    .card { background: white; border-radius: 15px; padding: 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid rgba(212, 175, 55, 0.2); max-width: 1100px; margin: 0 auto; }
     h1 { color: var(--primary-color); margin-top: 0; margin-bottom: 30px; font-size: 28px; }
     
-    /* 放大照片區域：調整為放大 1.5 倍效果 */
-    .welcome-image-container { width: 100%; min-height: 600px; margin: 0 auto 30px auto; border-radius: 12px; border: 3px solid var(--secondary-color); background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .welcome-image { max-width: 150%; width: 150%; height: auto; display: block; object-fit: contain; }
+    /* 放大照片區域：寬度與圖片皆放大為原來的 2 倍 */
+    .welcome-image-container { width: 120%; min-height: 800px; margin: 0 auto 30px -10%; border-radius: 12px; border: 3px solid var(--secondary-color); background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .welcome-image { width: 100%; height: auto; display: block; object-fit: contain; }
     
     .form-group { margin-bottom: 25px; }
     .form-control { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
@@ -137,5 +132,3 @@
   </script>
 </body>
 </html>
-
-```
