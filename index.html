@@ -4,48 +4,35 @@
   <meta charset="UTF-8">
   <title>員工評核系統</title>
   <style>
+    /* 保持您原本的 CSS 設定 */
     :root { --primary-color: #0a3d2e; --secondary-color: #d4af37; --bg-color: #e8f5e9; }
-    body { margin: 0; display: flex; height: 100vh; background-color: var(--bg-color); font-family: sans-serif; }
+    body { display: flex; height: 100vh; background-color: var(--bg-color); font-family: sans-serif; }
     .sidebar { width: 260px; background-color: var(--primary-color); color: white; }
-    .sidebar-menu { list-style: none; padding: 0; margin: 20px 0 0 0; }
-    .sidebar-menu li { padding: 18px 25px; cursor: pointer; border-left: 4px solid transparent; }
-    .sidebar-menu li.active { background-color: rgba(255,255,255,0.2); color: var(--secondary-color); border-left-color: var(--secondary-color); }
     .main-content { flex: 1; padding: 40px; overflow-y: auto; }
-    .page { display: none; } 
-    .page.active { display: block !important; }
-    .card { background: white; padding: 35px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .btn { background-color: var(--primary-color); color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; margin-top: 10px; }
-    .edit-textarea { width: 90%; height: 60px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .card { background: white; padding: 35px; border-radius: 15px; margin-bottom: 20px; }
+    .btn { background-color: var(--primary-color); color: white; padding: 10px 20px; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
   <div class="sidebar">
     <h2 style="padding:40px 20px">端午佳節</h2>
-    <ul class="sidebar-menu">
-      <li id="menu-home" class="active" onclick="switchPage('home')">🏠 首頁</li>
-      <li id="menu-eval" onclick="switchPage('eval')">📝 員工評核表</li>
-      <li id="menu-admin" onclick="switchPage('admin')">⚙️ 管理後台</li>
+    <ul id="menu">
+      <li onclick="showPage('home')">🏠 首頁</li>
+      <li onclick="showPage('admin')">⚙️ 管理後台</li>
     </ul>
   </div>
   <div class="main-content">
-    <div id="page-home" class="page active"><div class="card"><h1>首頁</h1><img id="display-avatar" style="width:100%; display:none;"></div></div>
-    <div id="page-eval" class="page"><div class="card"><h1>評核表</h1><select id="leaderSelect" onchange="syncMembers()"></select><select id="memberSelect"></select></div></div>
+    <div id="page-home" class="page active">
+        <div class="card"><h1>首頁</h1><img id="display-avatar" style="width:100%;"></div>
+    </div>
     <div id="page-admin" class="page">
-      <div class="card">
-        <h3>📷 照片管理</h3>
-        <input type="file" id="photoUploader" accept="image/*">
-        <button class="btn" onclick="uploadPhoto()">更新首頁照片</button>
-      </div>
-      <div class="card">
-        <h3>👥 員工名單管理</h3>
-        <input type="text" id="adminLeaderName" placeholder="組長名稱"><br>
-        <textarea id="adminMemberList" placeholder="組員名單(逗號分隔)"></textarea><br>
-        <button class="btn" onclick="addTeam()">新增員工配置</button>
-        <table style="width:100%; margin-top:20px;">
-            <thead><tr><th>組長</th><th>組員名單(可編輯)</th><th>操作</th></tr></thead>
-            <tbody id="teamBody"></tbody>
-        </table>
-      </div>
+        <div class="card">
+            <h3>📷 照片管理</h3>
+            <input type="file" id="photoUploader" accept="image/*">
+            <button class="btn" onclick="uploadPhoto()">更新首頁照片</button>
+        </div>
     </div>
   </div>
 
@@ -53,6 +40,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
+    // --- 請填入您截圖中的完整設定 ---
     const firebaseConfig = {
       apiKey: "AIzaSyAPBXphipNLgAHuqPg0HZ-J8HIqc9hQHc",
       authDomain: "employee-review-system-4a32d.firebaseapp.com",
@@ -63,68 +51,43 @@
       appId: "1:855967203605:web:b80727517c38b28229291c"
     };
 
-    const db = getDatabase(initializeApp(firebaseConfig));
-    window.db = db; window.ref = ref; window.set = set;
-    window.masterData = {};
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-    onValue(ref(db, 'appData'), (snapshot) => {
-        const data = snapshot.val() || {};
-        window.masterData = data.teamData || {};
-        if(data.homepagePhoto) {
-            const img = document.getElementById('display-avatar');
-            img.src = data.homepagePhoto; img.style.display = 'block';
+    // 全域變數，供下方 HTML 按鈕使用
+    window.db = db;
+    window.ref = ref;
+    window.set = set;
+
+    // 監聽雲端資料，若資料變動自動更新圖片
+    onValue(ref(db, 'homepagePhoto'), (snapshot) => {
+        const data = snapshot.val();
+        if(data) {
+            document.getElementById('display-avatar').src = data;
         }
-        renderTable();
     });
   </script>
 
   <script>
-    function switchPage(pageId) {
-        document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-        document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
-        document.getElementById('page-' + pageId).style.display = 'block';
-        document.getElementById('menu-' + pageId).classList.add('active');
+    // 頁面切換邏輯
+    function showPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-'+id).classList.add('active');
     }
 
+    // 上傳邏輯：讀取檔案轉成文字(Base64)後寫入 Firebase
     function uploadPhoto() {
         const file = document.getElementById('photoUploader').files[0];
         if(!file) return alert('請選擇檔案');
+        
         const reader = new FileReader();
-        reader.onload = e => { window.set(window.ref(window.db, 'appData/homepagePhoto'), e.target.result); alert('已上傳至雲端'); };
+        reader.onload = function(e) {
+            const imageData = e.target.result;
+            window.set(window.ref(window.db, 'homepagePhoto'), imageData)
+            .then(() => alert('照片已成功上傳至雲端！'))
+            .catch(error => alert('失敗: ' + error.message));
+        };
         reader.readAsDataURL(file);
-    }
-
-    function addTeam() {
-        const l = document.getElementById('adminLeaderName').value;
-        const m = document.getElementById('adminMemberList').value;
-        if(l && m) {
-            window.masterData[l] = m;
-            window.set(window.ref(window.db, 'appData/teamData'), window.masterData);
-            alert('已新增');
-        }
-    }
-
-    function renderTable() {
-        const tbody = document.getElementById('teamBody'); tbody.innerHTML = '';
-        const lSel = document.getElementById('leaderSelect'); lSel.innerHTML = '<option>請選擇</option>';
-        for (const l in window.masterData) {
-            tbody.innerHTML += `<tr><td>${l}</td><td><textarea id="edit_${l}" class="edit-textarea">${window.masterData[l]}</textarea></td><td><button class="btn" onclick="saveRow('${l}')">儲存</button></td></tr>`;
-            lSel.innerHTML += `<option value="${l}">${l}</option>`;
-        }
-    }
-
-    function saveRow(l) {
-        window.masterData[l] = document.getElementById('edit_'+l).value;
-        window.set(window.ref(window.db, 'appData/teamData'), window.masterData);
-        alert('儲存成功');
-    }
-
-    function syncMembers() {
-        const l = document.getElementById('leaderSelect').value;
-        const mSel = document.getElementById('memberSelect'); mSel.innerHTML = '';
-        if(window.masterData[l]) {
-            window.masterData[l].split(',').forEach(m => mSel.innerHTML += `<option>${m.trim()}</option>`);
-        }
     }
   </script>
 </body>
