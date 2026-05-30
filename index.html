@@ -14,7 +14,7 @@
     .sidebar-menu li.active { background-color: rgba(255,255,255,0.2); color: var(--secondary-color); border-left-color: var(--secondary-color); }
     .main-content { flex: 1; padding: 40px; overflow-y: auto; }
     .page { display: none; } .page.active { display: block; }
-    .card { background: white; border-radius: 15px; padding: 35px; margin-bottom: 20px; }
+    .card { background: white; border-radius: 15px; padding: 35px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 900px; margin: 0 auto; }
     .form-group { margin-bottom: 25px; }
     .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
     .btn { background-color: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
@@ -28,19 +28,19 @@
   <div class="sidebar">
     <div class="sidebar-header"><h2>端午佳節</h2></div>
     <ul class="sidebar-menu">
-      <li id="menu-home" class="active" onclick="showPage('home')">🏠 首頁</li>
-      <li id="menu-eval" onclick="showPage('eval')">📝 員工評核表</li>
-      <li id="menu-admin" onclick="showPage('admin')">⚙️ 管理後台</li>
+      <li id="menu-home" class="active" onclick="window.showPage('home')">🏠 首頁</li>
+      <li id="menu-eval" onclick="window.showPage('eval')">📝 員工評核表</li>
+      <li id="menu-admin" onclick="window.showPage('admin')">⚙️ 管理後台</li>
     </ul>
   </div>
   <div class="main-content">
     <div id="page-home" class="page active"><div class="card"><h1>端午種子培育計畫</h1><img id="display-avatar" src="" style="width:100%; display:none;"></div></div>
-    <div id="page-eval" class="page"><div class="card"><h1>員工績效評核</h1><div class="form-group"><label>選擇組長</label><select id="leaderSelect" class="form-control" onchange="syncMembers()"><option value="">請選擇</option></select></div><div class="form-group"><label>選擇組員</label><select id="memberSelect" class="form-control"><option value="">請選擇</option></select></div></div></div>
+    <div id="page-eval" class="page"><div class="card"><h1>員工績效評核</h1><div class="form-group"><label>選擇組長</label><select id="leaderSelect" class="form-control" onchange="window.syncMembers()"><option value="">請選擇</option></select></div><div class="form-group"><label>選擇組員</label><select id="memberSelect" class="form-control"><option value="">請選擇</option></select></div></div></div>
     <div id="page-admin" class="page">
       <div class="card">
         <h1>管理後台</h1>
-        <div class="admin-section"><h3>📷 照片管理</h3><input type="file" id="photoUploader" accept="image/*"><button class="btn" onclick="uploadPhoto()">更新首頁照片</button></div>
-        <div class="admin-section"><h3>👥 員工名單管理</h3><div class="form-group"><input type="text" id="adminLeaderName" class="form-control" placeholder="組長名稱"></div><div class="form-group"><textarea id="adminMemberList" class="form-control" placeholder="組員名單 (逗號分隔)"></textarea></div><button class="btn" onclick="saveToData()">新增員工配置</button></div>
+        <div class="admin-section"><h3>📷 照片管理</h3><input type="file" id="photoUploader" accept="image/*"><button class="btn" onclick="window.uploadPhoto()">更新首頁照片</button></div>
+        <div class="admin-section"><h3>👥 員工名單管理</h3><div class="form-group"><input type="text" id="adminLeaderName" class="form-control" placeholder="組長名稱"></div><div class="form-group"><textarea id="adminMemberList" class="form-control" placeholder="組員名單 (逗號分隔)"></textarea></div><button class="btn" onclick="window.saveToData()">新增員工配置</button></div>
         <table class="data-table" id="teamTable"><thead><tr><th>組長</th><th>組員名單(可編輯)</th><th>操作</th></tr></thead><tbody></tbody></table>
       </div>
     </div>
@@ -49,12 +49,13 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-    
-    // --- 填入您的 Firebase 設定 ---
-    const firebaseConfig = { /* ... */ }; 
+
+    // --- 請填入您的 Firebase 設定 ---
+    const firebaseConfig = { /* 填入您的設定 */ };
     const db = getDatabase(initializeApp(firebaseConfig));
-    
-    window.db = db; window.ref = ref; window.set = set;
+    window.masterData = {};
+
+    // 核心監聽：雲端資料一變動，畫面立刻刷新
     onValue(ref(db, 'appData'), (snapshot) => {
         const data = snapshot.val() || {};
         window.masterData = data.teamData || {};
@@ -62,49 +63,53 @@
             const img = document.getElementById('display-avatar');
             img.src = data.homepagePhoto; img.style.display = 'block';
         }
-        updateUI();
+        window.updateUI();
     });
-  </script>
 
-  <script>
-    function showPage(pageId) {
+    // 綁定全域函數 (解決按鈕沒反應問題)
+    window.showPage = (pageId) => {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('page-' + pageId).classList.add('active');
         document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
         document.getElementById('menu-' + pageId).classList.add('active');
-    }
-    function uploadPhoto() {
+    };
+
+    window.uploadPhoto = () => {
         const file = document.getElementById('photoUploader').files[0];
-        if (!file) return alert('請先選擇照片');
+        if (!file) return alert('請先選照片');
         const reader = new FileReader();
-        reader.onload = e => { set(ref(window.db, 'appData/homepagePhoto'), e.target.result); alert('照片已更新'); };
+        reader.onload = e => { set(ref(db, 'appData/homepagePhoto'), e.target.result); alert('照片已更新'); };
         reader.readAsDataURL(file);
-    }
-    function saveToData() {
+    };
+
+    window.saveToData = () => {
         const leader = document.getElementById('adminLeaderName').value;
         const members = document.getElementById('adminMemberList').value;
         if (!leader || !members) return alert('請填寫完整');
         window.masterData[leader] = members;
-        set(ref(window.db, 'appData/teamData'), window.masterData);
-    }
-    function updateUI() {
+        set(ref(db, 'appData/teamData'), window.masterData);
+        alert('已新增');
+    };
+
+    window.updateUI = () => {
         const tbody = document.querySelector('#teamTable tbody'); tbody.innerHTML = '';
         const leaderSelect = document.getElementById('leaderSelect'); leaderSelect.innerHTML = '<option value="">請選擇</option>';
         for (const leader in window.masterData) {
-            tbody.innerHTML += `<tr><td>${leader}</td><td><textarea id="edit_${leader}" class="edit-textarea">${window.masterData[leader]}</textarea></td><td><button class="btn" onclick="updateRow('${leader}')">儲存</button> <button class="btn" style="background:#e74c3c" onclick="deleteTeam('${leader}')">刪除</button></td></tr>`;
+            tbody.innerHTML += `<tr><td>${leader}</td><td><textarea id="edit_${leader}" class="edit-textarea">${window.masterData[leader]}</textarea></td><td><button class="btn" onclick="window.updateRow('${leader}')">儲存</button> <button class="btn" style="background:#e74c3c" onclick="window.deleteTeam('${leader}')">刪除</button></td></tr>`;
             leaderSelect.innerHTML += `<option value="${leader}">${leader}</option>`;
         }
-    }
-    function updateRow(leader) { window.masterData[leader] = document.getElementById('edit_' + leader).value; set(ref(window.db, 'appData/teamData'), window.masterData); alert('已更新'); }
-    function deleteTeam(leader) { delete window.masterData[leader]; set(ref(window.db, 'appData/teamData'), window.masterData); }
-    function syncMembers() {
+    };
+
+    window.updateRow = (leader) => { window.masterData[leader] = document.getElementById('edit_' + leader).value; set(ref(db, 'appData/teamData'), window.masterData); alert('已儲存'); };
+    window.deleteTeam = (leader) => { delete window.masterData[leader]; set(ref(db, 'appData/teamData'), window.masterData); };
+    window.syncMembers = () => {
         const leader = document.getElementById('leaderSelect').value;
         const memberSelect = document.getElementById('memberSelect');
         memberSelect.innerHTML = '<option value="">請選擇</option>';
         if (leader && window.masterData[leader]) {
             window.masterData[leader].split(',').forEach(m => { if(m.trim()) memberSelect.innerHTML += `<option value="${m.trim()}">${m.trim()}</option>`; });
         }
-    }
+    };
   </script>
 </body>
 </html>
