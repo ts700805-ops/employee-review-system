@@ -1,49 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
-    <title>Firebase 上傳測試</title>
+  <meta charset="UTF-8">
+  <title>員工評核系統</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .card { border: 1px solid #ccc; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    .btn { padding: 10px 20px; cursor: pointer; background: #0a3d2e; color: white; border: none; }
+  </style>
 </head>
 <body>
-    <h2>Firebase 圖片上傳測試</h2>
-    <input type="file" id="testInput" accept="image/*">
-    <button onclick="testUpload()">執行上傳測試</button>
-    <p id="status">狀態：等待操作...</p>
-    <img id="testImg" style="width:200px; margin-top:20px;">
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+  <div class="card">
+    <h3>照片管理</h3>
+    <input type="file" id="photoInput" accept="image/*">
+    <button class="btn" onclick="uploadData()">確認上傳</button>
+    <p id="msg">等待操作...</p>
+    <img id="preview" style="width:100px; display:block; margin-top:10px;">
+  </div>
 
-        // 請在此填入您的真實 Firebase Config
-        const firebaseConfig = {
-            // ... 請填入您的 apiKey, databaseURL 等設定 ...
-        };
+  <script type="module">
+    // 匯入 Firebase 核心模組
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-        const db = getDatabase(initializeApp(firebaseConfig));
-        window.db = db; window.ref = ref; window.set = set;
+    // 您的 Firebase 設定 (直接填入)
+    const firebaseConfig = {
+      apiKey: "AIzaSyAPBXphipNLgAHuqPg0HZ-J8HIqc9hQHc",
+      authDomain: "employee-review-system-4a32d.firebaseapp.com",
+      databaseURL: "https://employee-review-system-4a32d-default-rtdb.firebaseio.com",
+      projectId: "employee-review-system-4a32d",
+      storageBucket: "employee-review-system-4a32d.appspot.com",
+      messagingSenderId: "855967203605",
+      appId: "1:855967203605:web:b80727517c38b28229291c"
+    };
 
-        // 監聽測試節點，確認資料是否真的寫進去了
-        onValue(ref(db, 'test_image'), (snapshot) => {
-            if(snapshot.val()) {
-                document.getElementById('testImg').src = snapshot.val();
-                document.getElementById('status').innerText = '狀態：成功從雲端讀取資料！';
-            }
-        });
-    </script>
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-    <script>
-        function testUpload() {
-            const file = document.getElementById('testInput').files[0];
-            if(!file) return alert('請先選擇檔案');
-            
-            const reader = new FileReader();
-            reader.onload = e => {
-                window.set(window.ref(window.db, 'test_image'), e.target.result)
-                .then(() => document.getElementById('status').innerText = '狀態：上傳指令已發送...')
-                .catch(err => document.getElementById('status').innerText = '錯誤：' + err.message);
-            };
-            reader.readAsDataURL(file);
-        }
-    </script>
+    // 將函數掛載到全域，確保 HTML 按鈕找得到
+    window.uploadData = () => {
+      const fileInput = document.getElementById('photoInput');
+      const msg = document.getElementById('msg');
+      const file = fileInput.files[0];
+      
+      if (!file) return alert('請選擇檔案');
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        msg.innerText = "正在上傳...";
+        // 寫入路徑: homepage/photo
+        set(ref(db, 'homepage/photo'), e.target.result)
+          .then(() => {
+            msg.innerText = "上傳成功！";
+            document.getElementById('preview').src = e.target.result;
+          })
+          .catch((err) => {
+            msg.innerText = "錯誤: " + err.message;
+            console.error(err);
+          });
+      };
+      reader.readAsDataURL(file);
+    };
+  </script>
 </body>
 </html>
