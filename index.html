@@ -4,25 +4,27 @@
   <meta charset="UTF-8">
   <title>員工評核系統</title>
   <style>
-    body { font-family: sans-serif; display: flex; margin: 0; }
-    nav { width: 200px; background: #0a3d2e; color: white; height: 100vh; padding: 20px; }
-    nav div { padding: 10px; cursor: pointer; }
-    main { flex: 1; padding: 20px; background: #f4f7f6; }
-    .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    .btn { padding: 8px 16px; cursor: pointer; background: #0a3d2e; color: white; border: none; border-radius: 4px; }
+    body { font-family: sans-serif; display: flex; margin: 0; background: #f4f7f6; }
+    nav { width: 220px; background: #0a3d2e; color: white; height: 100vh; padding: 20px; }
+    nav div { padding: 15px; cursor: pointer; border-bottom: 1px solid #1a5e4d; }
+    nav div:hover { background: #1a5e4d; }
+    main { flex: 1; padding: 30px; }
+    .card { background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .btn { padding: 10px 20px; cursor: pointer; background: #0a3d2e; color: white; border: none; border-radius: 5px; }
+    input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    #displayImg { max-width: 100%; height: auto; border-radius: 8px; }
+    .version { font-size: 12px; color: #888; margin-bottom: 20px; }
   </style>
 </head>
 <body>
 
 <nav>
+  <div class="version">版本: 20260530-01</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
 </nav>
 
-<main id="content">
-  </main>
+<main id="content"></main>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
@@ -35,13 +37,13 @@
   };
   const db = getDatabase(initializeApp(firebaseConfig));
 
-  // 頁面切換邏輯
   window.showPage = (page) => {
     const content = document.getElementById('content');
     if (page === 'home') {
-      content.innerHTML = `<h1>首頁</h1><img id="displayImg" style="max-width:300px;">`;
+      content.innerHTML = `<h1>首頁</h1><img id="displayImg" src="">`;
       onValue(ref(db, 'homepage/photo'), (snapshot) => {
-        document.getElementById('displayImg').src = snapshot.val() || '';
+        const img = document.getElementById('displayImg');
+        img.src = snapshot.val() || '';
       });
     } else {
       content.innerHTML = `
@@ -53,9 +55,10 @@
         <div class="card">
           <h3>👥 員工名單管理</h3>
           <input type="text" id="leaderName" placeholder="組長名稱">
-          <input type="text" id="memberList" placeholder="組員名單(逗號分隔)">
+          <input type="text" id="memberList" placeholder="組員名單(請用逗號分隔)">
           <button class="btn" onclick="addTeam()">新增員工配置</button>
-          <table id="teamTable" style="margin-top:20px;"></table>
+          <hr>
+          <div id="teamList"></div>
         </div>`;
       renderTeams();
     }
@@ -63,26 +66,35 @@
 
   window.uploadPhoto = () => {
     const file = document.getElementById('photoInput').files[0];
+    if(!file) return alert('請選擇檔案');
     const reader = new FileReader();
-    reader.onload = e => set(ref(db, 'homepage/photo'), e.target.result).then(() => alert('照片更新成功！'));
+    reader.onload = e => set(ref(db, 'homepage/photo'), e.target.result).then(() => alert('首頁照片已更新！'));
     reader.readAsDataURL(file);
   };
 
   window.addTeam = () => {
     const leader = document.getElementById('leaderName').value;
     const members = document.getElementById('memberList').value;
-    set(ref(db, 'teams/' + leader), members).then(() => alert('儲存成功！'));
+    if(!leader || !members) return alert('請填寫完整資訊');
+    set(ref(db, 'teams/' + leader), members).then(() => {
+      alert('員工配置已新增！');
+      document.getElementById('leaderName').value = '';
+      document.getElementById('memberList').value = '';
+    });
   };
 
   function renderTeams() {
     onValue(ref(db, 'teams'), (snapshot) => {
       const data = snapshot.val() || {};
-      let html = `<tr><th>組長</th><th>組員(可編輯)</th><th>操作</th></tr>`;
+      let html = `<h4>現有員工配置：</h4>`;
       for (let leader in data) {
-        html += `<tr><td>${leader}</td><td><input id="edit_${leader}" value="${data[leader]}"></td>
-                 <td><button onclick="saveEdit('${leader}')">儲存</button></td></tr>`;
+        html += `<div style="margin-bottom:10px;">
+                   <strong>${leader}組：</strong>
+                   <input id="edit_${leader}" value="${data[leader]}" style="width:70%;">
+                   <button onclick="saveEdit('${leader}')">儲存修改</button>
+                 </div>`;
       }
-      document.getElementById('teamTable').innerHTML = html;
+      document.getElementById('teamList').innerHTML = html;
     });
   }
 
@@ -91,7 +103,7 @@
     set(ref(db, 'teams/' + leader), val).then(() => alert('修改成功！'));
   };
 
-  showPage('home'); // 預設頁面
+  showPage('home');
 </script>
 </body>
 </html>
