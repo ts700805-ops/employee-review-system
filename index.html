@@ -7,38 +7,23 @@
   <style>
     :root { --primary-color: #0a3d2e; --secondary-color: #d4af37; --bg-color: #e8f5e9; --text-color: #333; }
     body { margin: 0; padding: 0; font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; height: 100vh; overflow: hidden; }
-    
     .sidebar { width: 260px; flex-shrink: 0; background-color: var(--primary-color); color: white; display: flex; flex-direction: column; z-index: 1000; height: 100vh; }
     .sidebar-header { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .sidebar-header h2 { margin: 0; font-size: 22px; color: var(--secondary-color); letter-spacing: 2px; }
     .sidebar-menu { list-style: none; padding: 0; margin: 20px 0 0 0; }
-    .sidebar-menu li { padding: 18px 25px; cursor: pointer; display: flex; align-items: center; font-size: 16px; font-weight: 500; border-left: 4px solid transparent; transition: all 0.3s ease; }
-    .sidebar-menu li:hover { background-color: rgba(255,255,255,0.1); color: var(--secondary-color); }
+    .sidebar-menu li { padding: 18px 25px; cursor: pointer; display: flex; align-items: center; font-size: 16px; font-weight: 500; border-left: 4px solid transparent; }
     .sidebar-menu li.active { background-color: rgba(255,255,255,0.2); color: var(--secondary-color); border-left-color: var(--secondary-color); }
-    
     .main-content { flex: 1; padding: 40px; overflow-y: auto; height: 100vh; box-sizing: border-box; }
     .page { display: none; }
     .page.active { display: block; }
     .card { background: white; border-radius: 15px; padding: 35px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 900px; margin: 0 auto; }
-    h1 { color: var(--primary-color); margin-top: 0; margin-bottom: 30px; font-size: 28px; }
-    
-    .welcome-image-container { width: 100%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
-    .welcome-image { max-width: 100%; height: auto; display: block; }
-    
     .form-group { margin-bottom: 25px; }
-    .form-control { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-    
-    /* 調整按鈕樣式 */
-    .btn { background-color: var(--primary-color); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 10px; font-weight: bold; }
-    .btn-upload { background-color: var(--secondary-color); color: #000; }
-    
-    .data-table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-    .data-table th, .data-table td { padding: 15px 20px; text-align: left; border-bottom: 1px solid #eee; }
-    .data-table th { background-color: var(--primary-color); color: white; }
-    .btn-delete { background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-    
-    /* 明確分區樣式 */
-    .admin-section { border: 1px solid #ccc; padding: 20px; border-radius: 10px; margin-bottom: 30px; background-color: #fcfcfc; }
+    .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+    .btn { background-color: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+    .admin-section { border: 1px solid #eee; padding: 20px; border-radius: 10px; margin-bottom: 20px; background: #fff; }
+    .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .data-table th, .data-table td { padding: 15px; border-bottom: 1px solid #eee; }
+    .edit-input { width: 100%; padding: 5px; }
   </style>
 </head>
 <body>
@@ -54,39 +39,34 @@
     <div id="page-home" class="page active">
       <div class="card">
         <h1>端午種子培育計畫</h1>
-        <div class="welcome-image-container">
-          <img id="display-avatar" class="welcome-image" src="" alt="請上傳照片" style="display:none;">
-          <span id="upload-tip">【請至管理後台點選上傳照片】</span>
-        </div>
+        <img id="display-avatar" src="" style="width:100%; display:none;">
       </div>
     </div>
     <div id="page-eval" class="page">
       <div class="card">
         <h1>員工績效評核</h1>
-        <form id="evalForm" onsubmit="event.preventDefault();">
-          <div class="form-group"><label>選擇組長</label><select id="leaderSelect" class="form-control" onchange="syncMembers()"><option value="">請選擇組長</option></select></div>
-          <div class="form-group"><label>選擇組員</label><select id="memberSelect" class="form-control"><option value="">請選擇組員</option></select></div>
-        </form>
+        <div class="form-group"><label>選擇組長</label><select id="leaderSelect" class="form-control" onchange="syncMembers()"><option value="">請選擇</option></select></div>
+        <div class="form-group"><label>選擇組員</label><select id="memberSelect" class="form-control"><option value="">請選擇</option></select></div>
       </div>
     </div>
     <div id="page-admin" class="page">
       <div class="card">
         <h1>管理後台</h1>
-        
         <div class="admin-section">
             <h3>📷 照片管理</h3>
             <input type="file" id="photoUploader" accept="image/*">
-            <button class="btn btn-upload" onclick="uploadPhoto()">點擊這裡：儲存並更新首頁照片</button>
+            <button class="btn" onclick="uploadPhoto()">更新首頁照片</button>
         </div>
-        
         <div class="admin-section">
             <h3>👥 員工名單管理</h3>
-            <div class="form-group"><label>組長名稱</label><input type="text" id="adminLeaderName" class="form-control"></div>
-            <div class="form-group"><label>組員名單 (逗號分隔)</label><textarea id="adminMemberList" class="form-control"></textarea></div>
-            <button class="btn" onclick="saveToData()">儲存人員配置</button>
+            <div class="form-group"><input type="text" id="adminLeaderName" class="form-control" placeholder="組長名稱"></div>
+            <div class="form-group"><textarea id="adminMemberList" class="form-control" placeholder="組員名單 (逗號分隔)"></textarea></div>
+            <button class="btn" onclick="saveToData()">新增員工配置</button>
         </div>
-        
-        <table class="data-table" id="teamTable"><thead><tr><th>組長</th><th>組員名單</th><th>操作</th></tr></thead><tbody></tbody></table>
+        <table class="data-table" id="teamTable">
+            <thead><tr><th>組長</th><th>組員名單(可直接編輯)</th><th>操作</th></tr></thead>
+            <tbody></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -94,62 +74,46 @@
     let masterData = JSON.parse(localStorage.getItem('teamData') || '{}');
     window.onload = function() {
         const savedImage = localStorage.getItem('homepagePhoto');
-        if (savedImage) {
-            const img = document.getElementById('display-avatar');
-            img.src = savedImage;
-            img.style.display = 'block';
-            document.getElementById('upload-tip').style.display = 'none';
-        }
+        if (savedImage) { const img = document.getElementById('display-avatar'); img.src = savedImage; img.style.display = 'block'; }
         updateUI();
     };
     function showPage(pageId) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
-      document.getElementById('page-' + pageId).classList.add('active');
-      document.getElementById('menu-' + pageId).classList.add('active');
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active');
     }
     function uploadPhoto() {
-      const input = document.getElementById('photoUploader');
-      if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          localStorage.setItem('homepagePhoto', e.target.result);
-          const img = document.getElementById('display-avatar');
-          img.src = e.target.result;
-          img.style.display = 'block';
-          document.getElementById('upload-tip').style.display = 'none';
-          alert('照片已更新至首頁！');
+        const file = document.getElementById('photoUploader').files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = e => { localStorage.setItem('homepagePhoto', e.target.result); document.getElementById('display-avatar').src = e.target.result; document.getElementById('display-avatar').style.display = 'block'; alert('照片已更新'); };
+            reader.readAsDataURL(file);
         }
-        reader.readAsDataURL(input.files[0]);
-      } else {
-        alert('請先點選「選擇檔案」挑選照片後，再按儲存按鈕。');
-      }
     }
     function saveToData() {
-      const leader = document.getElementById('adminLeaderName').value.trim();
-      const members = document.getElementById('adminMemberList').value.split(',').map(m => m.trim()).filter(m => m);
-      if (!leader || members.length === 0) return alert('請完整填寫組長與組員名單！');
-      masterData[leader] = members;
-      localStorage.setItem('teamData', JSON.stringify(masterData));
-      updateUI();
-      alert('人員配置已儲存');
+        const leader = document.getElementById('adminLeaderName').value;
+        const members = document.getElementById('adminMemberList').value;
+        if (!leader || !members) return alert('請填寫完整');
+        masterData[leader] = members;
+        localStorage.setItem('teamData', JSON.stringify(masterData));
+        updateUI();
     }
     function updateUI() {
-      const tbody = document.querySelector('#teamTable tbody'); tbody.innerHTML = '';
-      const leaderSelect = document.getElementById('leaderSelect'); leaderSelect.innerHTML = '<option value="">請選擇組長</option>';
-      for (const leader in masterData) {
-        tbody.innerHTML += `<tr><td>${leader}</td><td>${masterData[leader].join(', ')}</td><td><button class="btn-delete" onclick="deleteTeam('${leader}')">刪除</button></td></tr>`;
-        leaderSelect.innerHTML += `<option value="${leader}">${leader}</option>`;
-      }
+        const tbody = document.querySelector('#teamTable tbody'); tbody.innerHTML = '';
+        const leaderSelect = document.getElementById('leaderSelect'); leaderSelect.innerHTML = '<option value="">請選擇</option>';
+        for (const leader in masterData) {
+            tbody.innerHTML += `<tr><td>${leader}</td><td><textarea id="edit_${leader}" class="edit-input">${masterData[leader]}</textarea></td><td><button class="btn" onclick="updateRow('${leader}')">儲存</button> <button class="btn" style="background:#e74c3c" onclick="deleteTeam('${leader}')">刪除</button></td></tr>`;
+            leaderSelect.innerHTML += `<option value="${leader}">${leader}</option>`;
+        }
     }
-    function deleteTeam(leader) { if(confirm('確定要刪除嗎？')) { delete masterData[leader]; localStorage.setItem('teamData', JSON.stringify(masterData)); updateUI(); } }
+    function updateRow(leader) { masterData[leader] = document.getElementById('edit_' + leader).value; localStorage.setItem('teamData', JSON.stringify(masterData)); alert('已更新'); updateUI(); }
+    function deleteTeam(leader) { delete masterData[leader]; localStorage.setItem('teamData', JSON.stringify(masterData)); updateUI(); }
     function syncMembers() {
-      const leader = document.getElementById('leaderSelect').value;
-      const memberSelect = document.getElementById('memberSelect');
-      memberSelect.innerHTML = '<option value="">請選擇組員</option>';
-      if (leader && masterData[leader]) {
-        masterData[leader].forEach(m => memberSelect.innerHTML += `<option value="${m}">${m}</option>`);
-      }
+        const leader = document.getElementById('leaderSelect').value;
+        const memberSelect = document.getElementById('memberSelect');
+        memberSelect.innerHTML = '<option value="">請選擇</option>';
+        if (leader && masterData[leader]) {
+            masterData[leader].split(',').forEach(m => memberSelect.innerHTML += `<option value="${m.trim()}">${m.trim()}</option>`);
+        }
     }
   </script>
 </body>
