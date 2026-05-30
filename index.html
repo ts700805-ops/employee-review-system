@@ -4,33 +4,31 @@
   <meta charset="UTF-8">
   <title>員工評核系統</title>
   <style>
-    body { font-family: '微軟正黑體', sans-serif; padding: 20px; background: #f4f7f6; }
-    .card { background: white; border: 1px solid #ddd; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .btn { padding: 12px 24px; cursor: pointer; background: #0a3d2e; color: white; border: none; border-radius: 6px; font-size: 16px; margin-top: 10px; }
-    input, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    body { font-family: sans-serif; padding: 20px; background: #f0f2f5; }
+    .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .btn { padding: 10px 20px; cursor: pointer; background: #0a3d2e; color: white; border: none; border-radius: 4px; }
+    input, textarea { width: 100%; padding: 8px; margin: 10px 0; box-sizing: border-box; }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <h3>📷 首頁照片管理</h3>
+    <h3>📷 上傳首頁照片</h3>
     <input type="file" id="photoInput" accept="image/*">
-    <button class="btn" onclick="uploadPhoto()">更新首頁照片</button>
+    <button class="btn" onclick="uploadPhoto()">上傳圖片</button>
   </div>
 
   <div class="card">
-    <h3>👥 新增員工配置</h3>
-    <input type="text" id="leaderName" placeholder="輸入組長名稱">
-    <textarea id="memberList" placeholder="輸入組員名單 (請用逗號分隔，例如：小明,小華,小莉)"></textarea>
-    <button class="btn" onclick="addTeam()">確認新增配置</button>
+    <h3>👥 管理員工配置</h3>
+    <input type="text" id="leaderName" placeholder="組長名稱">
+    <textarea id="memberList" placeholder="組員名單 (逗號分隔)"></textarea>
+    <button class="btn" onclick="addTeam()">儲存配置</button>
   </div>
 
   <script type="module">
-    // 匯入 Firebase SDK
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-    // 您的專案設定 (請勿修改此區塊)
     const firebaseConfig = {
       apiKey: "AIzaSyAPBXphipNLgAHuqPg0HZ-J8HIqc9hQHc",
       authDomain: "employee-review-system-4a32d.firebaseapp.com",
@@ -43,35 +41,28 @@
 
     const db = getDatabase(initializeApp(firebaseConfig));
 
-    // 照片上傳函式
     window.uploadPhoto = () => {
       const file = document.getElementById('photoInput').files[0];
-      if(!file) return alert('請先選擇一張照片！');
+      if(!file) return alert('請選擇檔案');
       
       const reader = new FileReader();
       reader.onload = (e) => {
-        // 直接寫入 homepage/photo
+        // 使用 update 而不是 set，避免覆蓋整個節點
         set(ref(db, 'homepage/photo'), e.target.result)
-          .then(() => alert('照片已成功更新至首頁！'))
-          .catch(err => alert('上傳失敗，錯誤訊息：' + err.message));
+          .then(() => alert('照片上傳成功！'))
+          .catch(err => alert('失敗: ' + err.message));
       };
       reader.readAsDataURL(file);
     };
 
-    // 員工名單新增函式
     window.addTeam = () => {
-      const leader = document.getElementById('leaderName').value.trim();
-      const members = document.getElementById('memberList').value.trim();
-      
-      if(!leader || !members) return alert('組長名稱與組員名單都不能為空！');
+      const leader = document.getElementById('leaderName').value;
+      const members = document.getElementById('memberList').value;
+      if(!leader || !members) return alert('請填寫完整');
       
       set(ref(db, 'teams/' + leader), members)
-        .then(() => {
-          alert('員工配置已成功儲存！');
-          document.getElementById('leaderName').value = '';
-          document.getElementById('memberList').value = '';
-        })
-        .catch(err => alert('儲存失敗，錯誤訊息：' + err.message));
+        .then(() => alert('配置儲存成功！'))
+        .catch(err => alert('失敗: ' + err.message));
     };
   </script>
 </body>
