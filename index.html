@@ -27,15 +27,18 @@
     
     .form-group { margin-bottom: 25px; }
     .form-control { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-    .btn { background-color: var(--primary-color); color: white; border: none; padding: 12px 30px; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 10px; }
+    
+    /* 調整按鈕樣式 */
+    .btn { background-color: var(--primary-color); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 10px; font-weight: bold; }
+    .btn-upload { background-color: var(--secondary-color); color: #000; }
+    
     .data-table { width: 100%; border-collapse: collapse; margin-top: 30px; }
     .data-table th, .data-table td { padding: 15px 20px; text-align: left; border-bottom: 1px solid #eee; }
     .data-table th { background-color: var(--primary-color); color: white; }
     .btn-delete { background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
     
-    /* 明確的按鈕分區樣式 */
-    .admin-section { border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 20px; }
-    .upload-box { background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #ddd; }
+    /* 明確分區樣式 */
+    .admin-section { border: 1px solid #ccc; padding: 20px; border-radius: 10px; margin-bottom: 30px; background-color: #fcfcfc; }
   </style>
 </head>
 <body>
@@ -71,16 +74,15 @@
         <h1>管理後台</h1>
         
         <div class="admin-section">
-            <div class="upload-box">
-                <label><strong>1. 上傳首頁照片：</strong></label><br><br>
-                <input type="file" id="photoUploader" accept="image/*">
-                <button class="btn" onclick="uploadPhoto()">確認上傳照片</button>
-            </div>
+            <h3>📷 照片管理</h3>
+            <input type="file" id="photoUploader" accept="image/*">
+            <button class="btn btn-upload" onclick="uploadPhoto()">點擊這裡：儲存並更新首頁照片</button>
         </div>
         
         <div class="admin-section">
-            <div class="form-group"><label><strong>2. 組長名稱</strong></label><input type="text" id="adminLeaderName" class="form-control"></div>
-            <div class="form-group"><label><strong>3. 組員名單 (逗號分隔)</strong></label><textarea id="adminMemberList" class="form-control"></textarea></div>
+            <h3>👥 員工名單管理</h3>
+            <div class="form-group"><label>組長名稱</label><input type="text" id="adminLeaderName" class="form-control"></div>
+            <div class="form-group"><label>組員名單 (逗號分隔)</label><textarea id="adminMemberList" class="form-control"></textarea></div>
             <button class="btn" onclick="saveToData()">儲存人員配置</button>
         </div>
         
@@ -106,7 +108,6 @@
       document.getElementById('page-' + pageId).classList.add('active');
       document.getElementById('menu-' + pageId).classList.add('active');
     }
-    // 獨立的照片處理函式
     function uploadPhoto() {
       const input = document.getElementById('photoUploader');
       if (input.files && input.files[0]) {
@@ -117,11 +118,11 @@
           img.src = e.target.result;
           img.style.display = 'block';
           document.getElementById('upload-tip').style.display = 'none';
-          alert('照片已更新！');
+          alert('照片已更新至首頁！');
         }
         reader.readAsDataURL(input.files[0]);
       } else {
-        alert('請先選擇檔案');
+        alert('請先點選「選擇檔案」挑選照片後，再按儲存按鈕。');
       }
     }
     function saveToData() {
@@ -131,7 +132,7 @@
       masterData[leader] = members;
       localStorage.setItem('teamData', JSON.stringify(masterData));
       updateUI();
-      alert('配置已儲存');
+      alert('人員配置已儲存');
     }
     function updateUI() {
       const tbody = document.querySelector('#teamTable tbody'); tbody.innerHTML = '';
