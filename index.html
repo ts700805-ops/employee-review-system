@@ -2,29 +2,18 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統</title>
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    .card { border: 1px solid #ccc; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-    .btn { padding: 10px 20px; cursor: pointer; background: #0a3d2e; color: white; border: none; }
-  </style>
+  <title>連線測試</title>
 </head>
 <body>
-
-  <div class="card">
-    <h3>照片管理</h3>
-    <input type="file" id="photoInput" accept="image/*">
-    <button class="btn" onclick="uploadData()">確認上傳</button>
-    <p id="msg">等待操作...</p>
-    <img id="preview" style="width:100px; display:block; margin-top:10px;">
-  </div>
+  <h2>Firebase 文字上傳測試</h2>
+  <input type="text" id="testText" placeholder="請輸入組長名稱">
+  <button id="sendBtn">上傳文字</button>
+  <p id="status">等待操作...</p>
 
   <script type="module">
-    // 匯入 Firebase 核心模組
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-    // 您的 Firebase 設定 (直接填入)
     const firebaseConfig = {
       apiKey: "AIzaSyAPBXphipNLgAHuqPg0HZ-J8HIqc9hQHc",
       authDomain: "employee-review-system-4a32d.firebaseapp.com",
@@ -35,32 +24,17 @@
       appId: "1:855967203605:web:b80727517c38b28229291c"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const db = getDatabase(initializeApp(firebaseConfig));
+    const status = document.getElementById('status');
 
-    // 將函數掛載到全域，確保 HTML 按鈕找得到
-    window.uploadData = () => {
-      const fileInput = document.getElementById('photoInput');
-      const msg = document.getElementById('msg');
-      const file = fileInput.files[0];
+    document.getElementById('sendBtn').onclick = () => {
+      const val = document.getElementById('testText').value;
+      if (!val) return alert('請輸入文字');
       
-      if (!file) return alert('請選擇檔案');
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        msg.innerText = "正在上傳...";
-        // 寫入路徑: homepage/photo
-        set(ref(db, 'homepage/photo'), e.target.result)
-          .then(() => {
-            msg.innerText = "上傳成功！";
-            document.getElementById('preview').src = e.target.result;
-          })
-          .catch((err) => {
-            msg.innerText = "錯誤: " + err.message;
-            console.error(err);
-          });
-      };
-      reader.readAsDataURL(file);
+      status.innerText = "正在上傳...";
+      set(ref(db, 'test_text'), val)
+        .then(() => status.innerText = "成功！請去 Firebase 確認")
+        .catch(err => status.innerText = "錯誤: " + err.message);
     };
   </script>
 </body>
