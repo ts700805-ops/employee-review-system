@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>員工評核系統 (雲端同步版)</title>
+  <title>員工評核系統</title>
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-    // --- 請將此處替換為您從 Firebase 複製的配置代碼 ---
+    // --- 請填入您自己的 Firebase 設定 ---
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
+      apiKey: "請填入您的API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+      projectId: "YOUR_PROJECT",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_ID",
       appId: "YOUR_APP_ID"
     };
 
@@ -26,7 +26,7 @@
     window.ref = ref;
     window.set = set;
 
-    // 監聽雲端資料變化
+    // 從雲端讀取資料並初始化
     onValue(ref(db, 'appData'), (snapshot) => {
         const data = snapshot.val() || {};
         window.masterData = data.teamData || {};
@@ -35,7 +35,7 @@
             img.src = data.homepagePhoto;
             img.style.display = 'block';
         }
-        if(typeof updateUI === 'function') updateUI();
+        updateUI();
     });
   </script>
 
@@ -46,9 +46,11 @@
     .sidebar-header { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .sidebar-menu { list-style: none; padding: 0; margin: 20px 0 0 0; }
     .sidebar-menu li { padding: 18px 25px; cursor: pointer; display: flex; align-items: center; font-size: 16px; font-weight: 500; border-left: 4px solid transparent; }
+    .sidebar-menu li:hover { background-color: rgba(255,255,255,0.1); }
     .sidebar-menu li.active { background-color: rgba(255,255,255,0.2); color: var(--secondary-color); border-left-color: var(--secondary-color); }
     .main-content { flex: 1; padding: 40px; overflow-y: auto; height: 100vh; box-sizing: border-box; }
-    .page { display: none; } .page.active { display: block; }
+    .page { display: none; }
+    .page.active { display: block; }
     .card { background: white; border-radius: 15px; padding: 35px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 900px; margin: 0 auto; }
     .form-group { margin-bottom: 25px; }
     .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
@@ -94,7 +96,7 @@
             <h3>👥 員工名單管理</h3>
             <div class="form-group"><input type="text" id="adminLeaderName" class="form-control" placeholder="組長名稱"></div>
             <div class="form-group"><textarea id="adminMemberList" class="form-control" placeholder="組員名單 (逗號分隔)"></textarea></div>
-            <button class="btn" onclick="addTeam()">新增員工配置</button>
+            <button class="btn" onclick="saveToData()">新增員工配置</button>
         </div>
         <table class="data-table" id="teamTable">
             <thead><tr><th>組長</th><th>組員名單(可直接編輯)</th><th>操作</th></tr></thead>
@@ -105,27 +107,32 @@
   </div>
   <script>
     window.masterData = {};
+
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('page-' + pageId).classList.add('active');
         document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
         document.getElementById('menu-' + pageId).classList.add('active');
     }
+
     function uploadPhoto() {
         const file = document.getElementById('photoUploader').files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = e => set(ref(window.db, 'appData/homepagePhoto'), e.target.result);
+            reader.onload = e => { set(ref(window.db, 'appData/homepagePhoto'), e.target.result); alert('照片已上傳雲端'); };
             reader.readAsDataURL(file);
         }
     }
-    function addTeam() {
+
+    function saveToData() {
         const leader = document.getElementById('adminLeaderName').value;
         const members = document.getElementById('adminMemberList').value;
         if (!leader || !members) return alert('請填寫完整');
         window.masterData[leader] = members;
         set(ref(window.db, 'appData/teamData'), window.masterData);
+        alert('已新增');
     }
+
     function updateUI() {
         const tbody = document.querySelector('#teamTable tbody'); tbody.innerHTML = '';
         const leaderSelect = document.getElementById('leaderSelect'); leaderSelect.innerHTML = '<option value="">請選擇</option>';
@@ -134,15 +141,18 @@
             leaderSelect.innerHTML += `<option value="${leader}">${leader}</option>`;
         }
     }
+
     function updateRow(leader) { 
         window.masterData[leader] = document.getElementById('edit_' + leader).value; 
         set(ref(window.db, 'appData/teamData'), window.masterData); 
         alert('已更新'); 
     }
+    
     function deleteTeam(leader) { 
         delete window.masterData[leader]; 
         set(ref(window.db, 'appData/teamData'), window.masterData); 
     }
+
     function syncMembers() {
         const leader = document.getElementById('leaderSelect').value;
         const memberSelect = document.getElementById('memberSelect');
