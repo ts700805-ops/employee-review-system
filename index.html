@@ -23,7 +23,7 @@
     .admin-section { border: 1px solid #eee; padding: 20px; border-radius: 10px; margin-bottom: 20px; background: #fff; }
     .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     .data-table th, .data-table td { padding: 15px; border-bottom: 1px solid #eee; }
-    .edit-input { width: 100%; padding: 5px; }
+    .edit-textarea { width: 90%; height: 60px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
   </style>
 </head>
 <body>
@@ -55,7 +55,7 @@
         <div class="admin-section">
             <h3>📷 照片管理</h3>
             <input type="file" id="photoUploader" accept="image/*">
-            <button class="btn" onclick="uploadPhoto()">更新首頁照片</button>
+            <button class="btn" style="background:#d4af37; color:black;" onclick="uploadPhoto()">更新首頁照片</button>
         </div>
         <div class="admin-section">
             <h3>👥 員工名單管理</h3>
@@ -64,7 +64,7 @@
             <button class="btn" onclick="saveToData()">新增員工配置</button>
         </div>
         <table class="data-table" id="teamTable">
-            <thead><tr><th>組長</th><th>組員名單(可直接編輯)</th><th>操作</th></tr></thead>
+            <thead><tr><th>組長</th><th>組員名單 (可編輯)</th><th>操作</th></tr></thead>
             <tbody></tbody>
         </table>
       </div>
@@ -80,6 +80,8 @@
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('page-' + pageId).classList.add('active');
+        document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
+        document.getElementById('menu-' + pageId).classList.add('active');
     }
     function uploadPhoto() {
         const file = document.getElementById('photoUploader').files[0];
@@ -87,7 +89,7 @@
             const reader = new FileReader();
             reader.onload = e => { localStorage.setItem('homepagePhoto', e.target.result); document.getElementById('display-avatar').src = e.target.result; document.getElementById('display-avatar').style.display = 'block'; alert('照片已更新'); };
             reader.readAsDataURL(file);
-        }
+        } else { alert('請先選擇檔案'); }
     }
     function saveToData() {
         const leader = document.getElementById('adminLeaderName').value;
@@ -101,18 +103,29 @@
         const tbody = document.querySelector('#teamTable tbody'); tbody.innerHTML = '';
         const leaderSelect = document.getElementById('leaderSelect'); leaderSelect.innerHTML = '<option value="">請選擇</option>';
         for (const leader in masterData) {
-            tbody.innerHTML += `<tr><td>${leader}</td><td><textarea id="edit_${leader}" class="edit-input">${masterData[leader]}</textarea></td><td><button class="btn" onclick="updateRow('${leader}')">儲存</button> <button class="btn" style="background:#e74c3c" onclick="deleteTeam('${leader}')">刪除</button></td></tr>`;
+            let row = document.createElement('tr');
+            row.innerHTML = `<td>${leader}</td>
+                             <td><textarea id="edit_${leader}" class="edit-textarea">${masterData[leader]}</textarea></td>
+                             <td>
+                                <button class="btn" onclick="updateRow('${leader}')">儲存</button> 
+                                <button class="btn" style="background:#e74c3c" onclick="deleteTeam('${leader}')">刪除</button>
+                             </td>`;
+            tbody.appendChild(row);
             leaderSelect.innerHTML += `<option value="${leader}">${leader}</option>`;
         }
     }
-    function updateRow(leader) { masterData[leader] = document.getElementById('edit_' + leader).value; localStorage.setItem('teamData', JSON.stringify(masterData)); alert('已更新'); updateUI(); }
+    function updateRow(leader) { 
+        masterData[leader] = document.getElementById('edit_' + leader).value; 
+        localStorage.setItem('teamData', JSON.stringify(masterData)); 
+        alert('名單已更新'); 
+    }
     function deleteTeam(leader) { delete masterData[leader]; localStorage.setItem('teamData', JSON.stringify(masterData)); updateUI(); }
     function syncMembers() {
         const leader = document.getElementById('leaderSelect').value;
         const memberSelect = document.getElementById('memberSelect');
         memberSelect.innerHTML = '<option value="">請選擇</option>';
         if (leader && masterData[leader]) {
-            masterData[leader].split(',').forEach(m => memberSelect.innerHTML += `<option value="${m.trim()}">${m.trim()}</option>`);
+            masterData[leader].split(',').forEach(m => { if(m.trim()) memberSelect.innerHTML += `<option value="${m.trim()}">${m.trim()}</option>`; });
         }
     }
   </script>
