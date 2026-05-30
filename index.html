@@ -7,23 +7,21 @@
   <style>
     :root { --primary-color: #0a3d2e; --secondary-color: #d4af37; --bg-color: #e8f5e9; --text-color: #333; }
     body { margin: 0; padding: 0; font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; height: 100vh; overflow: hidden; }
-    .sidebar { width: 260px; flex-shrink: 0; background-color: var(--primary-color); color: white; display: flex; flex-direction: column; height: 100vh; }
+    .sidebar { width: 260px; flex-shrink: 0; background-color: var(--primary-color); color: white; height: 100vh; }
     .sidebar-header { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .sidebar-menu { list-style: none; padding: 0; margin: 20px 0 0 0; }
-    .sidebar-menu li { padding: 18px 25px; cursor: pointer; display: flex; align-items: center; font-size: 16px; font-weight: 500; border-left: 4px solid transparent; }
-    .sidebar-menu li:hover { background-color: rgba(255,255,255,0.1); }
+    .sidebar-menu li { padding: 18px 25px; cursor: pointer; border-left: 4px solid transparent; }
     .sidebar-menu li.active { background-color: rgba(255,255,255,0.2); color: var(--secondary-color); border-left-color: var(--secondary-color); }
-    .main-content { flex: 1; padding: 40px; overflow-y: auto; height: 100vh; box-sizing: border-box; }
-    .page { display: none; }
-    .page.active { display: block; }
-    .card { background: white; border-radius: 15px; padding: 35px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 900px; margin: 0 auto; }
+    .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+    .page { display: none; } .page.active { display: block; }
+    .card { background: white; border-radius: 15px; padding: 35px; margin-bottom: 20px; }
     .form-group { margin-bottom: 25px; }
     .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
     .btn { background-color: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
     .admin-section { border: 1px solid #eee; padding: 20px; border-radius: 10px; margin-bottom: 20px; background: #fff; }
     .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     .data-table th, .data-table td { padding: 15px; border-bottom: 1px solid #eee; }
-    .edit-textarea { width: 90%; height: 60px; padding: 5px; }
+    .edit-textarea { width: 90%; height: 60px; }
   </style>
 </head>
 <body>
@@ -36,37 +34,14 @@
     </ul>
   </div>
   <div class="main-content">
-    <div id="page-home" class="page active">
-      <div class="card">
-        <h1>端午種子培育計畫</h1>
-        <img id="display-avatar" src="" style="width:100%; display:none;">
-      </div>
-    </div>
-    <div id="page-eval" class="page">
-      <div class="card">
-        <h1>員工績效評核</h1>
-        <div class="form-group"><label>選擇組長</label><select id="leaderSelect" class="form-control" onchange="syncMembers()"><option value="">請選擇</option></select></div>
-        <div class="form-group"><label>選擇組員</label><select id="memberSelect" class="form-control"><option value="">請選擇</option></select></div>
-      </div>
-    </div>
+    <div id="page-home" class="page active"><div class="card"><h1>端午種子培育計畫</h1><img id="display-avatar" src="" style="width:100%; display:none;"></div></div>
+    <div id="page-eval" class="page"><div class="card"><h1>員工績效評核</h1><div class="form-group"><label>選擇組長</label><select id="leaderSelect" class="form-control" onchange="syncMembers()"><option value="">請選擇</option></select></div><div class="form-group"><label>選擇組員</label><select id="memberSelect" class="form-control"><option value="">請選擇</option></select></div></div></div>
     <div id="page-admin" class="page">
       <div class="card">
         <h1>管理後台</h1>
-        <div class="admin-section">
-            <h3>📷 照片管理</h3>
-            <input type="file" id="photoUploader" accept="image/*">
-            <button class="btn" onclick="uploadPhoto()">更新首頁照片</button>
-        </div>
-        <div class="admin-section">
-            <h3>👥 員工名單管理</h3>
-            <div class="form-group"><input type="text" id="adminLeaderName" class="form-control" placeholder="組長名稱"></div>
-            <div class="form-group"><textarea id="adminMemberList" class="form-control" placeholder="組員名單 (逗號分隔)"></textarea></div>
-            <button class="btn" onclick="saveToData()">新增員工配置</button>
-        </div>
-        <table class="data-table" id="teamTable">
-            <thead><tr><th>組長</th><th>組員名單</th><th>操作</th></tr></thead>
-            <tbody></tbody>
-        </table>
+        <div class="admin-section"><h3>📷 照片管理</h3><input type="file" id="photoUploader" accept="image/*"><button class="btn" onclick="uploadPhoto()">更新首頁照片</button></div>
+        <div class="admin-section"><h3>👥 員工名單管理</h3><div class="form-group"><input type="text" id="adminLeaderName" class="form-control" placeholder="組長名稱"></div><div class="form-group"><textarea id="adminMemberList" class="form-control" placeholder="組員名單 (逗號分隔)"></textarea></div><button class="btn" onclick="saveToData()">新增員工配置</button></div>
+        <table class="data-table" id="teamTable"><thead><tr><th>組長</th><th>組員名單(可編輯)</th><th>操作</th></tr></thead><tbody></tbody></table>
       </div>
     </div>
   </div>
@@ -74,34 +49,18 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-
-    // --- 請填入您 Firebase 的設定 ---
-    const firebaseConfig = {
-      apiKey: "填入API_KEY",
-      authDomain: "填入專案ID.firebaseapp.com",
-      databaseURL: "https://填入專案ID-default-rtdb.firebaseio.com",
-      projectId: "填入專案ID",
-      storageBucket: "填入專案ID.appspot.com",
-      messagingSenderId: "填入ID",
-      appId: "填入APP_ID"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
     
-    // 將功能掛載到 window，讓 HTML 按鈕抓得到
-    window.db = db;
-    window.ref = ref;
-    window.set = set;
-    window.masterData = {};
-
+    // --- 填入您的 Firebase 設定 ---
+    const firebaseConfig = { /* ... */ }; 
+    const db = getDatabase(initializeApp(firebaseConfig));
+    
+    window.db = db; window.ref = ref; window.set = set;
     onValue(ref(db, 'appData'), (snapshot) => {
         const data = snapshot.val() || {};
         window.masterData = data.teamData || {};
         if(data.homepagePhoto) {
             const img = document.getElementById('display-avatar');
-            img.src = data.homepagePhoto;
-            img.style.display = 'block';
+            img.src = data.homepagePhoto; img.style.display = 'block';
         }
         updateUI();
     });
@@ -114,28 +73,20 @@
         document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
         document.getElementById('menu-' + pageId).classList.add('active');
     }
-
     function uploadPhoto() {
         const file = document.getElementById('photoUploader').files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = e => { 
-                set(ref(window.db, 'appData/homepagePhoto'), e.target.result);
-                alert('照片已存入雲端');
-            };
-            reader.readAsDataURL(file);
-        }
+        if (!file) return alert('請先選擇照片');
+        const reader = new FileReader();
+        reader.onload = e => { set(ref(window.db, 'appData/homepagePhoto'), e.target.result); alert('照片已更新'); };
+        reader.readAsDataURL(file);
     }
-
     function saveToData() {
         const leader = document.getElementById('adminLeaderName').value;
         const members = document.getElementById('adminMemberList').value;
         if (!leader || !members) return alert('請填寫完整');
         window.masterData[leader] = members;
         set(ref(window.db, 'appData/teamData'), window.masterData);
-        alert('已儲存至雲端');
     }
-
     function updateUI() {
         const tbody = document.querySelector('#teamTable tbody'); tbody.innerHTML = '';
         const leaderSelect = document.getElementById('leaderSelect'); leaderSelect.innerHTML = '<option value="">請選擇</option>';
@@ -144,18 +95,8 @@
             leaderSelect.innerHTML += `<option value="${leader}">${leader}</option>`;
         }
     }
-
-    function updateRow(leader) { 
-        window.masterData[leader] = document.getElementById('edit_' + leader).value; 
-        set(ref(window.db, 'appData/teamData'), window.masterData); 
-        alert('已更新'); 
-    }
-    
-    function deleteTeam(leader) { 
-        delete window.masterData[leader]; 
-        set(ref(window.db, 'appData/teamData'), window.masterData); 
-    }
-
+    function updateRow(leader) { window.masterData[leader] = document.getElementById('edit_' + leader).value; set(ref(window.db, 'appData/teamData'), window.masterData); alert('已更新'); }
+    function deleteTeam(leader) { delete window.masterData[leader]; set(ref(window.db, 'appData/teamData'), window.masterData); }
     function syncMembers() {
         const leader = document.getElementById('leaderSelect').value;
         const memberSelect = document.getElementById('memberSelect');
