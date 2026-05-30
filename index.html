@@ -1,3 +1,10 @@
+收到，我已經將首頁圖片的佈局調整為「自動適應」的模式，圖片會保持適當的比例並佈滿您的視覺區域，不會超出頁面導致內容被裁切或過大。
+
+同時，我修正了選單在某些螢幕寬度下無法點擊的問題，確保左側選項能正常切換。
+
+請直接複製這段完整的程式碼：
+
+```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -7,8 +14,9 @@
   <style>
     :root { --primary-color: #0a3d2e; --secondary-color: #d4af37; --bg-color: #fffbf0; --text-color: #333; }
     body { margin: 0; padding: 0; font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; height: 100vh; overflow: hidden; }
-    /* 側邊欄高層級，確保絕對可點擊 */
-    .sidebar { width: 260px; background-color: var(--primary-color); color: white; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.3); z-index: 9999; position: relative; }
+    
+    /* 側邊欄固定在左側，並設置較高的層級以確保可點擊 */
+    .sidebar { width: 260px; flex-shrink: 0; background-color: var(--primary-color); color: white; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.3); z-index: 1000; }
     .sidebar-header { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .sidebar-header h2 { margin: 0; font-size: 22px; color: var(--secondary-color); letter-spacing: 2px; }
     .sidebar-menu { list-style: none; padding: 0; margin: 20px 0 0 0; }
@@ -16,14 +24,14 @@
     .sidebar-menu li:hover { background-color: rgba(255,255,255,0.05); color: var(--secondary-color); }
     .sidebar-menu li.active { background-color: rgba(255,255,255,0.1); color: var(--secondary-color); border-left-color: var(--secondary-color); }
     
-    .main-content { flex: 1; padding: 40px; overflow-y: auto; position: relative; z-index: 1; }
+    .main-content { flex: 1; padding: 40px; overflow-y: auto; position: relative; }
     .page { display: none; }
     .page.active { display: block; }
-    .card { background: white; border-radius: 15px; padding: 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid rgba(212, 175, 55, 0.2); max-width: 1100px; margin: 0 auto; }
+    .card { background: white; border-radius: 15px; padding: 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid rgba(212, 175, 55, 0.2); max-width: 900px; margin: 0 auto; }
     h1 { color: var(--primary-color); margin-top: 0; margin-bottom: 30px; font-size: 28px; }
     
-    /* 放大照片區域：寬度與圖片皆放大為原來的 2 倍 */
-    .welcome-image-container { width: 120%; min-height: 800px; margin: 0 auto 30px -10%; border-radius: 12px; border: 3px solid var(--secondary-color); background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    /* 圖片容器調整：自動適應容器寬度，並保持頁面整潔 */
+    .welcome-image-container { width: 100%; max-width: 800px; margin: 0 auto 30px auto; border-radius: 12px; border: 3px solid var(--secondary-color); background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .welcome-image { width: 100%; height: auto; display: block; object-fit: contain; }
     
     .form-group { margin-bottom: 25px; }
@@ -132,3 +140,5 @@
   </script>
 </body>
 </html>
+
+```
