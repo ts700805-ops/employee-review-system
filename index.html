@@ -14,20 +14,20 @@
     input, select { padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; width: 100%; max-width: 300px; }
     .version { font-size: 12px; color: #888; margin-bottom: 20px; }
     hr { margin: 20px 0; border: 0; border-top: 1px solid #eee; }
-
-    /* 華麗漸層表格樣式 */
     .gradient-bg { background: linear-gradient(135deg, #4b0082, #800080, #9932cc); color: white; padding: 30px; border-radius: 15px; }
     .skill-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #4b0082; border-radius: 10px; overflow: hidden; color: white; border: 1px solid #800080; }
     .skill-table th, .skill-table td { border: 1px solid #800080; padding: 12px; text-align: center; }
     .skill-table th { background: #300030; color: white; }
+    .eval-card { display: inline-block; width: 200px; background: #f0f0f0; padding: 15px; margin: 10px; border-radius: 10px; text-align: center; color: #333; }
   </style>
 </head>
 <body>
 
 <nav>
-  <div class="version">版本: 20260531-12</div>
+  <div class="version">版本: 20260531-13</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
+  <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
 </nav>
 
@@ -53,157 +53,64 @@
       });
     } else if (page === 'admin') {
       const password = prompt("請輸入管理員密碼:");
-      if (password !== "0000") {
-        alert("密碼錯誤，無法進入！");
-        return;
-      }
+      if (password !== "0000") { alert("密碼錯誤！"); return; }
       content.innerHTML = `
-        <div class="card">
-          <h3>📷 照片管理</h3>
-          <input type="file" id="photoInput" accept="image/*"><br>
-          <button class="btn" onclick="uploadPhoto()">更新首頁照片</button>
-        </div>
-        <div class="card">
-          <h3>👥 員工配置</h3>
-          <input type="text" id="ln" placeholder="組長名稱"><br>
-          <input type="text" id="ml" placeholder="組員名稱(逗號分隔)"><br>
-          <button class="btn" onclick="addTeam()">儲存組別</button>
-          <hr>
-          <div id="teamList"></div>
-        </div>
-        <div class="card">
-          <h3>🛠️ 技能設定</h3>
-          <p>請先選擇組長以編輯該組技能：</p>
-          <select id="sLeaderSelect" onchange="updateMemberSelect()"><option value="">選擇組長</option></select><br>
-          <select id="sMemberSelect"><option value="">請先選擇組長</option></select><br>
-          <input type="text" id="sName" placeholder="技能名稱(逗號分隔)"><br>
-          <button class="btn" onclick="addSkill()">新增技能</button>
-          <hr>
-          <div id="skillEditArea"></div>
-        </div>`;
-      renderTeams();
-      loadLeaders();
+        <div class="card"><h3>📷 照片管理</h3><input type="file" id="photoInput" accept="image/*"><br><button class="btn" onclick="uploadPhoto()">更新首頁照片</button></div>
+        <div class="card"><h3>👥 員工配置</h3><input type="text" id="ln" placeholder="組長名稱"><br><input type="text" id="ml" placeholder="組員名稱(逗號分隔)"><br><button class="btn" onclick="addTeam()">儲存組別</button><hr><div id="teamList"></div></div>
+        <div class="card"><h3>🛠️ 技能設定</h3><select id="sLeaderSelect" onchange="updateMemberSelect()"><option value="">選擇組長</option></select><br><select id="sMemberSelect"><option value="">請先選擇組長</option></select><br><input type="text" id="sName" placeholder="技能名稱(逗號分隔)"><br><button class="btn" onclick="addSkill()">新增技能</button><hr><div id="skillEditArea"></div></div>`;
+      renderTeams(); loadLeaders();
+    } else if (page === 'eval') {
+      content.innerHTML = `<h1>💡 技能評核進度表</h1><select id="evalLeaderFilter" onchange="renderEval()" style="color:black;"><option value="">請選擇組長</option></select><div id="evalArea"></div>`;
+      setupEvalFilter();
     } else {
-      content.innerHTML = `
-        <div class="gradient-bg">
-          <h1>📊 技能總表</h1>
-          <p>請選擇組長過濾人員：</p>
-          <select id="leaderFilter" onchange="renderSkills()" style="color:black;"><option value="">請選擇組長</option></select>
-          <div id="skillTable"></div>
-        </div>`;
+      content.innerHTML = `<div class="gradient-bg"><h1>📊 技能總表</h1><p>請選擇組長過濾人員：</p><select id="leaderFilter" onchange="renderSkills()" style="color:black;"><option value="">請選擇組長</option></select><div id="skillTable"></div></div>`;
       setupLeaderFilter();
     }
   };
 
-  // --- 管理後台功能 ---
-  function loadLeaders() {
+  // --- 評核頁面邏輯 ---
+  function setupEvalFilter() {
     onValue(ref(db, 'teams'), (s) => {
       const data = s.val() || {};
-      const select = document.getElementById('sLeaderSelect');
-      if(select) select.innerHTML = '<option value="">選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join('');
-    });
-  }
-
-  window.updateMemberSelect = () => {
-    const leader = document.getElementById('sLeaderSelect').value;
-    const memberSelect = document.getElementById('sMemberSelect');
-    if (!leader) { 
-      if(memberSelect) memberSelect.innerHTML = '<option value="">請先選擇組長</option>'; 
-      document.getElementById('skillEditArea').innerHTML = '';
-      return; 
-    }
-    onValue(ref(db, 'teams/' + leader), (s) => {
-      const members = (s.val() || "").split(',');
-      if(memberSelect) memberSelect.innerHTML = members.map(m => `<option value="${m.trim()}">${m.trim()}</option>`).join('');
-    });
-    renderSkillsAdminByLeader(leader);
-  };
-
-  window.uploadPhoto = () => {
-    const file = document.getElementById('photoInput').files[0];
-    if(!file) return alert('請選擇檔案');
-    const reader = new FileReader();
-    reader.onload = e => set(ref(db, 'homepage/photo'), e.target.result).then(() => alert('照片已更新'));
-    reader.readAsDataURL(file);
-  };
-
-  window.addTeam = () => {
-    const leader = document.getElementById('ln').value;
-    const members = document.getElementById('ml').value;
-    if(!leader || !members) return alert('請輸入完整資訊');
-    set(ref(db, 'teams/' + leader), members).then(() => { alert('組別儲存成功'); });
-  };
-
-  window.addSkill = () => {
-    const l = document.getElementById('sLeaderSelect').value;
-    const m = document.getElementById('sMemberSelect').value;
-    const s = document.getElementById('sName').value;
-    if(!l || !m || !s) { alert('請填寫完整技能資訊'); return; }
-    set(ref(db, `skills/${l}/${m}`), s).then(() => { alert('技能已新增'); });
-  };
-
-  function renderTeams() {
-    onValue(ref(db, 'teams'), (s) => {
-      const data = s.val() || {};
-      const container = document.getElementById('teamList');
-      if(!container) return;
-      let html = `<h4>目前人員配置：</h4>`;
-      for (let l in data) {
-        html += `<div style="margin-bottom:10px;"><strong>${l}組：</strong><br><input id="e_team_${l}" value="${data[l]}"> <button class="btn" onclick="saveEditTeam('${l}')">儲存</button></div>`;
-      }
-      container.innerHTML = html;
-    });
-  }
-
-  window.saveEditTeam = (l) => {
-    set(ref(db, 'teams/' + l), document.getElementById('e_team_' + l).value).then(() => alert('更新成功'));
-  };
-
-  function renderSkillsAdminByLeader(leader) {
-    onValue(ref(db, `skills/${leader}`), (s) => {
-      const data = s.val() || {};
-      const container = document.getElementById('skillEditArea');
-      if(!container) return;
-      let html = `<h4>${leader}組 目前技能清單：</h4>`;
-      for (let m in data) {
-        html += `<div style="margin-bottom:10px;"><strong>${m}：</strong><br><input id="e_skill_${leader}_${m}" value="${data[m]}"> <button class="btn" onclick="saveEditSkill('${leader}','${m}')">儲存</button></div>`;
-      }
-      container.innerHTML = html;
-    });
-  }
-
-  window.saveEditSkill = (l, m) => {
-    set(ref(db, `skills/${l}/${m}`), document.getElementById(`e_skill_${l}_${m}`).value).then(() => alert('更新成功'));
-  };
-
-  // --- 技能總表功能 ---
-  function setupLeaderFilter() {
-    onValue(ref(db, 'teams'), (s) => {
-      const data = s.val() || {};
-      const filter = document.getElementById('leaderFilter');
+      const filter = document.getElementById('evalLeaderFilter');
       if(filter) filter.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join('');
     });
   }
 
-  window.renderSkills = () => {
-    const selectedLeader = document.getElementById('leaderFilter').value;
-    const tableContainer = document.getElementById('skillTable');
-    if (!selectedLeader) { tableContainer.innerHTML = ''; return; }
-    onValue(ref(db, `skills/${selectedLeader}`), (s) => {
-      const data = s.val() || {};
-      let skillSet = new Set();
-      for(let m in data) { data[m].split(',').forEach(sk => { if(sk.trim()) skillSet.add(sk.trim()); }); }
-      let skillsArray = Array.from(skillSet);
-      if(skillsArray.length === 0) { tableContainer.innerHTML = '<p>尚無技能紀錄</p>'; return; }
-      let html = `<table class="skill-table"><tr><th>組員</th>` + skillsArray.map(s => `<th>${s}</th>`).join('') + `</tr>`;
-      for(let m in data) {
-        const userSkillArray = data[m].split(',').map(s => s.trim());
-        html += `<tr><td>${m}</td>` + skillsArray.map(sk => `<td>${userSkillArray.includes(sk) ? '✓' : ''}</td>`).join('') + `</tr>`;
-      }
-      tableContainer.innerHTML = html + `</table>`;
+  window.renderEval = () => {
+    const leader = document.getElementById('evalLeaderFilter').value;
+    const area = document.getElementById('evalArea');
+    if(!leader) { area.innerHTML = ''; return; }
+    onValue(ref(db, 'teams/' + leader), (s) => {
+      const members = (s.val() || "").split(',');
+      let html = `<h3>檢視：【${leader}組】</h3>`;
+      members.forEach(m => {
+        html += `<div class="eval-card"><div>👤 ${m.trim()}</div>
+                 <select id="score_${m.trim()}"><option>0%</option><option>20%</option><option>40%</option><option>60%</option><option>80%</option><option>100%</option></select>
+                 <br><button class="btn" onclick="saveScore('${leader}','${m.trim()}')">儲存</button></div>`;
+      });
+      area.innerHTML = html;
     });
-  }
+  };
 
+  window.saveScore = (l, m) => {
+    const val = document.getElementById('score_' + m).value;
+    set(ref(db, `evaluations/${l}/${m}`), val).then(() => alert('儲存成功'));
+  };
+
+  // --- 其他原有功能函數維持不變 ---
+  function loadLeaders() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const select = document.getElementById('sLeaderSelect'); if(select) select.innerHTML = '<option value="">選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
+  window.updateMemberSelect = () => { const leader = document.getElementById('sLeaderSelect').value; const memberSelect = document.getElementById('sMemberSelect'); if (!leader) { if(memberSelect) memberSelect.innerHTML = '<option value="">請先選擇組長</option>'; document.getElementById('skillEditArea').innerHTML = ''; return; } onValue(ref(db, 'teams/' + leader), (s) => { const members = (s.val() || "").split(','); if(memberSelect) memberSelect.innerHTML = members.map(m => `<option value="${m.trim()}">${m.trim()}</option>`).join(''); }); renderSkillsAdminByLeader(leader); };
+  window.uploadPhoto = () => { const file = document.getElementById('photoInput').files[0]; if(!file) return alert('請選擇檔案'); const reader = new FileReader(); reader.onload = e => set(ref(db, 'homepage/photo'), e.target.result).then(() => alert('照片已更新')); reader.readAsDataURL(file); };
+  window.addTeam = () => { const leader = document.getElementById('ln').value; const members = document.getElementById('ml').value; if(!leader || !members) return alert('請輸入完整資訊'); set(ref(db, 'teams/' + leader), members).then(() => { alert('組別儲存成功'); }); };
+  window.addSkill = () => { const l = document.getElementById('sLeaderSelect').value; const m = document.getElementById('sMemberSelect').value; const s = document.getElementById('sName').value; if(!l || !m || !s) { alert('請填寫完整技能資訊'); return; } set(ref(db, `skills/${l}/${m}`), s).then(() => { alert('技能已新增'); }); };
+  function renderTeams() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const container = document.getElementById('teamList'); if(!container) return; let html = `<h4>目前人員配置：</h4>`; for (let l in data) { html += `<div style="margin-bottom:10px;"><strong>${l}組：</strong><br><input id="e_team_${l}" value="${data[l]}"> <button class="btn" onclick="saveEditTeam('${l}')">儲存</button></div>`; } container.innerHTML = html; }); }
+  window.saveEditTeam = (l) => { set(ref(db, 'teams/' + l), document.getElementById('e_team_' + l).value).then(() => alert('更新成功')); };
+  function renderSkillsAdminByLeader(leader) { onValue(ref(db, `skills/${leader}`), (s) => { const data = s.val() || {}; const container = document.getElementById('skillEditArea'); if(!container) return; let html = `<h4>${leader}組 目前技能清單：</h4>`; for (let m in data) { html += `<div style="margin-bottom:10px;"><strong>${m}：</strong><br><input id="e_skill_${leader}_${m}" value="${data[m]}"> <button class="btn" onclick="saveEditSkill('${leader}','${m}')">儲存</button></div>`; } container.innerHTML = html; }); }
+  window.saveEditSkill = (l, m) => { set(ref(db, `skills/${l}/${m}`), document.getElementById(`e_skill_${l}_${m}`).value).then(() => alert('更新成功')); };
+  function setupLeaderFilter() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const filter = document.getElementById('leaderFilter'); if(filter) filter.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
+  window.renderSkills = () => { const selectedLeader = document.getElementById('leaderFilter').value; const tableContainer = document.getElementById('skillTable'); if (!selectedLeader) { tableContainer.innerHTML = ''; return; } onValue(ref(db, `skills/${selectedLeader}`), (s) => { const data = s.val() || {}; let skillSet = new Set(); for(let m in data) { data[m].split(',').forEach(sk => { if(sk.trim()) skillSet.add(sk.trim()); }); } let skillsArray = Array.from(skillSet); if(skillsArray.length === 0) { tableContainer.innerHTML = '<p>尚無技能紀錄</p>'; return; } let html = `<table class="skill-table"><tr><th>組員</th>` + skillsArray.map(s => `<th>${s}</th>`).join('') + `</tr>`; for(let m in data) { const userSkillArray = data[m].split(',').map(s => s.trim()); html += `<tr><td>${m}</td>` + skillsArray.map(sk => `<td>${userSkillArray.includes(sk) ? '✓' : ''}</td>`).join('') + `</tr>`; } tableContainer.innerHTML = html + `</table>`; }); }
+  
   showPage('home');
 </script>
 </body>
