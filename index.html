@@ -11,16 +11,16 @@
     main { flex: 1; padding: 30px; }
     .card { background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .btn { padding: 10px 20px; cursor: pointer; background: #0a3d2e; color: white; border: none; border-radius: 5px; }
-    input { padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    input { padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; width: 100%; max-width: 300px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-    th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
     .version { font-size: 12px; color: #888; margin-bottom: 20px; }
   </style>
 </head>
 <body>
 
 <nav>
-  <div class="version">版本: 20260531-05</div>
+  <div class="version">版本: 20260531-06</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
@@ -47,21 +47,21 @@
       content.innerHTML = `
         <div class="card">
           <h3>📷 照片管理</h3>
-          <input type="file" id="photoInput" accept="image/*">
+          <input type="file" id="photoInput" accept="image/*"><br>
           <button class="btn" onclick="uploadPhoto()">更新首頁照片</button>
         </div>
         <div class="card">
           <h3>👥 員工配置</h3>
-          <input type="text" id="ln" placeholder="組長名稱">
-          <input type="text" id="ml" placeholder="組員名稱(逗號分隔)">
+          <input type="text" id="ln" placeholder="組長名稱"><br>
+          <input type="text" id="ml" placeholder="組員名稱(逗號分隔)"><br>
           <button class="btn" onclick="addTeam()">儲存組別</button>
           <div id="teamList"></div>
         </div>
         <div class="card">
           <h3>🛠️ 技能設定</h3>
-          <input type="text" id="sLeader" placeholder="組長名稱">
-          <input type="text" id="sMember" placeholder="組員名稱">
-          <input type="text" id="sName" placeholder="技能名稱">
+          <input type="text" id="sLeader" placeholder="組長名稱"><br>
+          <input type="text" id="sMember" placeholder="組員名稱"><br>
+          <input type="text" id="sName" placeholder="技能名稱(逗號分隔)"><br>
           <button class="btn" onclick="addSkill()">新增技能</button>
           <div id="skillList"></div>
         </div>`;
@@ -124,14 +124,26 @@
     onValue(ref(db, 'skills'), (s) => {
       const data = s.val() || {};
       let members = new Set();
-      let skills = new Set();
-      for(let l in data) { for(let m in data[l]) { members.add(m); skills.add(data[l][m]); } }
+      let skillSet = new Set();
       
-      let html = `<table><tr><th>組員</th>` + Array.from(skills).map(s => `<th>${s}</th>`).join('') + `</tr>`;
+      // 解析所有技能
+      for(let l in data) { 
+        for(let m in data[l]) { 
+          members.add(m);
+          let userSkills = data[l][m].split(',');
+          userSkills.forEach(sk => skillSet.add(sk.trim()));
+        } 
+      }
+      
+      let skillsArray = Array.from(skillSet);
+      let html = `<table><tr><th>組員</th>` + skillsArray.map(s => `<th>${s}</th>`).join('') + `</tr>`;
+      
       members.forEach(m => {
-        html += `<tr><td>${m}</td>` + Array.from(skills).map(s => {
+        html += `<tr><td>${m}</td>` + skillsArray.map(sk => {
           let has = false;
-          for(let l in data) if(data[l][m] === s) has = true;
+          for(let l in data) {
+            if(data[l][m] && data[l][m].split(',').map(s => s.trim()).includes(sk)) has = true;
+          }
           return `<td>${has ? '✓' : ''}</td>`;
         }).join('') + `</tr>`;
       });
