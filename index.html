@@ -12,15 +12,15 @@
     .card { background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .btn { padding: 10px 20px; cursor: pointer; background: #0a3d2e; color: white; border: none; border-radius: 5px; }
     input { padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+    th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
     .version { font-size: 12px; color: #888; margin-bottom: 20px; }
   </style>
 </head>
 <body>
 
 <nav>
-  <div class="version">版本: 20260531-04</div>
+  <div class="version">版本: 20260531-05</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
@@ -32,12 +32,11 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-  const firebaseConfig = {
+  const db = getDatabase(initializeApp({
     apiKey: "AIzaSyAPBXphipNLgAHuqPg0HZ-J8HIqc9hQHc",
     databaseURL: "https://employee-review-system-4a32d-default-rtdb.firebaseio.com",
     projectId: "employee-review-system-4a32d"
-  };
-  const db = getDatabase(initializeApp(firebaseConfig));
+  }));
 
   window.showPage = (page) => {
     const content = document.getElementById('content');
@@ -86,10 +85,7 @@
   };
 
   window.addSkill = () => {
-    const l = document.getElementById('sLeader').value;
-    const m = document.getElementById('sMember').value;
-    const s = document.getElementById('sName').value;
-    set(ref(db, `skills/${l}/${m}`), s).then(() => alert('技能已新增'));
+    set(ref(db, `skills/${document.getElementById('sLeader').value}/${document.getElementById('sMember').value}`), document.getElementById('sName').value).then(() => alert('技能已新增'));
   };
 
   function renderTeams() {
@@ -121,18 +117,24 @@
   };
 
   window.saveEditSkill = (l, m) => {
-    set(ref(db, `skills/${l}/${m}`), document.getElementById(`e_${l}_${m}`).value).then(() => alert('技能更新成功'));
+    set(ref(db, `skills/${l}/${m}`), document.getElementById(`e_${l}_${m}`).value).then(() => alert('更新成功'));
   };
 
   function renderSkills() {
     onValue(ref(db, 'skills'), (s) => {
       const data = s.val() || {};
-      let html = `<table><tr><th>組長</th><th>組員</th><th>技能</th></tr>`;
-      for (let l in data) {
-        for (let m in data[l]) {
-          html += `<tr><td>${l}</td><td>${m}</td><td>${data[l][m]}</td></tr>`;
-        }
-      }
+      let members = new Set();
+      let skills = new Set();
+      for(let l in data) { for(let m in data[l]) { members.add(m); skills.add(data[l][m]); } }
+      
+      let html = `<table><tr><th>組員</th>` + Array.from(skills).map(s => `<th>${s}</th>`).join('') + `</tr>`;
+      members.forEach(m => {
+        html += `<tr><td>${m}</td>` + Array.from(skills).map(s => {
+          let has = false;
+          for(let l in data) if(data[l][m] === s) has = true;
+          return `<td>${has ? '✓' : ''}</td>`;
+        }).join('') + `</tr>`;
+      });
       document.getElementById('skillTable').innerHTML = html + `</table>`;
     });
   }
