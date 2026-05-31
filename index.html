@@ -20,7 +20,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260531-07</div>
+  <div class="version">版本: 20260531-08</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
@@ -59,14 +59,15 @@
         </div>
         <div class="card">
           <h3>🛠️ 技能設定</h3>
-          <input type="text" id="sLeader" placeholder="組長名稱"><br>
-          <input type="text" id="sMember" placeholder="組員名稱"><br>
+          <select id="sLeaderSelect" onchange="updateMemberSelect()"><option value="">選擇組長</option></select><br>
+          <select id="sMemberSelect"><option value="">請先選擇組長</option></select><br>
           <input type="text" id="sName" placeholder="技能名稱(逗號分隔)"><br>
           <button class="btn" onclick="addSkill()">新增技能</button>
           <div id="skillList"></div>
         </div>`;
       renderTeams();
       renderSkillsAdmin();
+      loadLeaders();
     } else {
       content.innerHTML = `
         <h1>技能總表</h1>
@@ -76,13 +77,29 @@
     }
   };
 
+  function loadLeaders() {
+    onValue(ref(db, 'teams'), (s) => {
+      const data = s.val() || {};
+      const select = document.getElementById('sLeaderSelect');
+      select.innerHTML = '<option value="">選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join('');
+    });
+  }
+
+  window.updateMemberSelect = () => {
+    const leader = document.getElementById('sLeaderSelect').value;
+    const memberSelect = document.getElementById('sMemberSelect');
+    if (!leader) { memberSelect.innerHTML = '<option value="">請先選擇組長</option>'; return; }
+    onValue(ref(db, 'teams/' + leader), (s) => {
+      const members = (s.val() || "").split(',');
+      memberSelect.innerHTML = members.map(m => `<option value="${m.trim()}">${m.trim()}</option>`).join('');
+    });
+  };
+
   function setupLeaderFilter() {
     onValue(ref(db, 'teams'), (s) => {
       const data = s.val() || {};
       const filter = document.getElementById('leaderFilter');
-      let options = `<option value="">請選擇組長</option>`;
-      for (let l in data) options += `<option value="${l}">${l}</option>`;
-      filter.innerHTML = options;
+      filter.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join('');
     });
   }
 
@@ -98,7 +115,11 @@
   };
 
   window.addSkill = () => {
-    set(ref(db, `skills/${document.getElementById('sLeader').value}/${document.getElementById('sMember').value}`), document.getElementById('sName').value).then(() => alert('技能已新增'));
+    const l = document.getElementById('sLeaderSelect').value;
+    const m = document.getElementById('sMemberSelect').value;
+    const s = document.getElementById('sName').value;
+    if(!l || !m || !s) { alert('請填寫完整資訊'); return; }
+    set(ref(db, `skills/${l}/${m}`), s).then(() => alert('技能已新增'));
   };
 
   function renderTeams() {
