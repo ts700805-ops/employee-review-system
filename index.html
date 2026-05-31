@@ -19,9 +19,11 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260530-01</div>
+  <div class="version">版本: 20260531-02</div>
   <div onclick="showPage('home')">🏠 首頁</div>
+  <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
+
 </nav>
 
 <main id="content"></main>
@@ -42,10 +44,9 @@
     if (page === 'home') {
       content.innerHTML = `<h1>首頁</h1><img id="displayImg" src="">`;
       onValue(ref(db, 'homepage/photo'), (snapshot) => {
-        const img = document.getElementById('displayImg');
-        img.src = snapshot.val() || '';
+        document.getElementById('displayImg').src = snapshot.val() || '';
       });
-    } else {
+    } else if (page === 'admin') {
       content.innerHTML = `
         <div class="card">
           <h3>📷 照片管理</h3>
@@ -55,32 +56,46 @@
         <div class="card">
           <h3>👥 員工名單管理</h3>
           <input type="text" id="leaderName" placeholder="組長名稱">
-          <input type="text" id="memberList" placeholder="組員名單(請用逗號分隔)">
+          <input type="text" id="memberList" placeholder="組員名單(逗號分隔)">
           <button class="btn" onclick="addTeam()">新增員工配置</button>
-          <hr>
           <div id="teamList"></div>
+        </div>
+        <div class="card">
+          <h3>🛠️ 技能設定</h3>
+          <input type="text" id="skillLeader" placeholder="組長名稱">
+          <input type="text" id="skillMember" placeholder="組員名稱">
+          <input type="text" id="skillName" placeholder="技能名稱">
+          <button class="btn" onclick="addSkill()">新增技能</button>
         </div>`;
       renderTeams();
+    } else if (page === 'skills') {
+      content.innerHTML = `<h1>技能總表</h1><div id="skillTable"></div>`;
+      renderSkills();
     }
   };
 
+  // 基礎功能 (保持不動)
   window.uploadPhoto = () => {
     const file = document.getElementById('photoInput').files[0];
     if(!file) return alert('請選擇檔案');
     const reader = new FileReader();
-    reader.onload = e => set(ref(db, 'homepage/photo'), e.target.result).then(() => alert('首頁照片已更新！'));
+    reader.onload = e => set(ref(db, 'homepage/photo'), e.target.result).then(() => alert('照片已更新！'));
     reader.readAsDataURL(file);
   };
 
   window.addTeam = () => {
     const leader = document.getElementById('leaderName').value;
     const members = document.getElementById('memberList').value;
-    if(!leader || !members) return alert('請填寫完整資訊');
-    set(ref(db, 'teams/' + leader), members).then(() => {
-      alert('員工配置已新增！');
-      document.getElementById('leaderName').value = '';
-      document.getElementById('memberList').value = '';
-    });
+    if(!leader || !members) return alert('請填寫完整');
+    set(ref(db, 'teams/' + leader), members).then(() => alert('員工配置已新增！'));
+  };
+
+  window.addSkill = () => {
+    const l = document.getElementById('skillLeader').value;
+    const m = document.getElementById('skillMember').value;
+    const s = document.getElementById('skillName').value;
+    if(!l || !m || !s) return alert('請填寫完整技能資訊');
+    set(ref(db, `skills/${l}/${m}`), s).then(() => alert('技能已新增！'));
   };
 
   function renderTeams() {
@@ -88,20 +103,29 @@
       const data = snapshot.val() || {};
       let html = `<h4>現有員工配置：</h4>`;
       for (let leader in data) {
-        html += `<div style="margin-bottom:10px;">
-                   <strong>${leader}組：</strong>
-                   <input id="edit_${leader}" value="${data[leader]}" style="width:70%;">
-                   <button onclick="saveEdit('${leader}')">儲存修改</button>
-                 </div>`;
+        html += `<div>${leader}組: <input id="edit_${leader}" value="${data[leader]}"> <button onclick="saveEdit('${leader}')">儲存</button></div>`;
       }
       document.getElementById('teamList').innerHTML = html;
     });
   }
 
   window.saveEdit = (leader) => {
-    const val = document.getElementById('edit_' + leader).value;
-    set(ref(db, 'teams/' + leader), val).then(() => alert('修改成功！'));
+    set(ref(db, 'teams/' + leader), document.getElementById('edit_' + leader).value).then(() => alert('已更新'));
   };
+
+  function renderSkills() {
+    onValue(ref(db, 'skills'), (snapshot) => {
+      const data = snapshot.val() || {};
+      let html = `<table border="1" style="width:100%; border-collapse:collapse;"><tr><th>組長</th><th>組員</th><th>技能</th></tr>`;
+      for (let leader in data) {
+        for (let member in data[leader]) {
+          html += `<tr><td>${leader}</td><td>${member}</td><td>${data[leader][member]}</td></tr>`;
+        }
+      }
+      html += `</table>`;
+      document.getElementById('skillTable').innerHTML = html;
+    });
+  }
 
   showPage('home');
 </script>
