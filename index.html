@@ -11,7 +11,7 @@
     main { flex: 1; padding: 30px; }
     .card { background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .btn { padding: 10px 20px; cursor: pointer; background: #0a3d2e; color: white; border: none; border-radius: 5px; }
-    input { padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; }
+    input { padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
     .version { font-size: 12px; color: #888; margin-bottom: 20px; }
@@ -20,7 +20,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260531-03</div>
+  <div class="version">版本: 20260531-04</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
@@ -64,8 +64,10 @@
           <input type="text" id="sMember" placeholder="組員名稱">
           <input type="text" id="sName" placeholder="技能名稱">
           <button class="btn" onclick="addSkill()">新增技能</button>
+          <div id="skillList"></div>
         </div>`;
       renderTeams();
+      renderSkillsAdmin();
     } else {
       content.innerHTML = `<h1>技能總表</h1><div id="skillTable"></div>`;
       renderSkills();
@@ -93,16 +95,33 @@
   function renderTeams() {
     onValue(ref(db, 'teams'), (s) => {
       const data = s.val() || {};
-      let html = `<h4>目前組別：</h4>`;
+      let html = `<h4>目前組別配置：</h4>`;
       for (let l in data) {
-        html += `<div>${l}: <input id="e_${l}" value="${data[l]}"> <button onclick="saveEdit('${l}')">修改</button></div>`;
+        html += `<div>${l}: <input id="e_${l}" value="${data[l]}"> <button onclick="saveEditTeam('${l}')">儲存</button></div>`;
       }
       document.getElementById('teamList').innerHTML = html;
     });
   }
 
-  window.saveEdit = (l) => {
+  function renderSkillsAdmin() {
+    onValue(ref(db, 'skills'), (s) => {
+      const data = s.val() || {};
+      let html = `<h4>目前技能設定：</h4>`;
+      for (let l in data) {
+        for (let m in data[l]) {
+          html += `<div>${l}-${m}: <input id="e_${l}_${m}" value="${data[l][m]}"> <button onclick="saveEditSkill('${l}','${m}')">儲存</button></div>`;
+        }
+      }
+      document.getElementById('skillList').innerHTML = html;
+    });
+  }
+
+  window.saveEditTeam = (l) => {
     set(ref(db, 'teams/' + l), document.getElementById('e_' + l).value).then(() => alert('更新成功'));
+  };
+
+  window.saveEditSkill = (l, m) => {
+    set(ref(db, `skills/${l}/${m}`), document.getElementById(`e_${l}_${m}`).value).then(() => alert('技能更新成功'));
   };
 
   function renderSkills() {
