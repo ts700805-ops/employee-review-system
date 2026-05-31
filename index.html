@@ -18,13 +18,16 @@
     .skill-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #4b0082; border-radius: 10px; overflow: hidden; color: white; border: 1px solid #800080; }
     .skill-table th, .skill-table td { border: 1px solid #800080; padding: 12px; text-align: center; }
     .skill-table th { background: #300030; color: white; }
-    .eval-card { display: inline-block; width: 200px; background: #f0f0f0; padding: 15px; margin: 10px; border-radius: 10px; text-align: center; color: #333; }
+    
+    /* 圓形進度 CSS */
+    .circle-progress { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 10px auto; background: radial-gradient(closest-side, white 80%, transparent 0 99%, white 0), conic-gradient(#4b0082 var(--p, 0%), #ddd 0); }
+    .eval-card { display: inline-block; width: 180px; background: white; padding: 15px; margin: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
 
 <nav>
-  <div class="version">版本: 20260531-13</div>
+  <div class="version">版本: 20260531-14</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -47,10 +50,7 @@
     const content = document.getElementById('content');
     if (page === 'home') {
       content.innerHTML = `<h1>首頁</h1><img id="displayImg" style="max-width:100%;" src="">`;
-      onValue(ref(db, 'homepage/photo'), (s) => {
-        const img = document.getElementById('displayImg');
-        if(img) img.src = s.val() || '';
-      });
+      onValue(ref(db, 'homepage/photo'), (s) => { const img = document.getElementById('displayImg'); if(img) img.src = s.val() || ''; });
     } else if (page === 'admin') {
       const password = prompt("請輸入管理員密碼:");
       if (password !== "0000") { alert("密碼錯誤！"); return; }
@@ -68,7 +68,7 @@
     }
   };
 
-  // --- 評核頁面邏輯 ---
+  // --- 評核頁面邏輯 (圓形進度連動) ---
   function setupEvalFilter() {
     onValue(ref(db, 'teams'), (s) => {
       const data = s.val() || {};
@@ -83,22 +83,36 @@
     if(!leader) { area.innerHTML = ''; return; }
     onValue(ref(db, 'teams/' + leader), (s) => {
       const members = (s.val() || "").split(',');
-      let html = `<h3>檢視：【${leader}組】</h3>`;
-      members.forEach(m => {
-        html += `<div class="eval-card"><div>👤 ${m.trim()}</div>
-                 <select id="score_${m.trim()}"><option>0%</option><option>20%</option><option>40%</option><option>60%</option><option>80%</option><option>100%</option></select>
-                 <br><button class="btn" onclick="saveScore('${leader}','${m.trim()}')">儲存</button></div>`;
+      onValue(ref(db, 'evaluations/' + leader), (snapshot) => {
+        const scores = snapshot.val() || {};
+        let html = `<h3>檢視：【${leader}組】</h3>`;
+        members.forEach(m => {
+          const name = m.trim();
+          const score = scores[name] || "0%";
+          const p = score.replace('%', '');
+          html += `<div class="eval-card"><div>👤 ${name}</div>
+                   <div class="circle-progress" style="--p:${p}%"><span>${score}</span></div>
+                   <select id="score_${name}" onchange="this.nextElementSibling.nextElementSibling.dataset.val=this.value">
+                     <option value="0%" ${score=='0%'?'selected':''}>0%</option>
+                     <option value="20%" ${score=='20%'?'selected':''}>20%</option>
+                     <option value="40%" ${score=='40%'?'selected':''}>40%</option>
+                     <option value="60%" ${score=='60%'?'selected':''}>60%</option>
+                     <option value="80%" ${score=='80%'?'selected':''}>80%</option>
+                     <option value="100%" ${score=='100%'?'selected':''}>100%</option>
+                   </select>
+                   <br><button class="btn" style="margin-top:5px;" onclick="saveScore('${leader}','${name}')">儲存</button></div>`;
+        });
+        area.innerHTML = html;
       });
-      area.innerHTML = html;
     });
   };
 
   window.saveScore = (l, m) => {
     const val = document.getElementById('score_' + m).value;
-    set(ref(db, `evaluations/${l}/${m}`), val).then(() => alert('儲存成功'));
+    set(ref(db, `evaluations/${l}/${m}`), val).then(() => alert('已儲存: ' + val));
   };
 
-  // --- 其他原有功能函數維持不變 ---
+  // --- 維持原有邏輯 ---
   function loadLeaders() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const select = document.getElementById('sLeaderSelect'); if(select) select.innerHTML = '<option value="">選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
   window.updateMemberSelect = () => { const leader = document.getElementById('sLeaderSelect').value; const memberSelect = document.getElementById('sMemberSelect'); if (!leader) { if(memberSelect) memberSelect.innerHTML = '<option value="">請先選擇組長</option>'; document.getElementById('skillEditArea').innerHTML = ''; return; } onValue(ref(db, 'teams/' + leader), (s) => { const members = (s.val() || "").split(','); if(memberSelect) memberSelect.innerHTML = members.map(m => `<option value="${m.trim()}">${m.trim()}</option>`).join(''); }); renderSkillsAdminByLeader(leader); };
   window.uploadPhoto = () => { const file = document.getElementById('photoInput').files[0]; if(!file) return alert('請選擇檔案'); const reader = new FileReader(); reader.onload = e => set(ref(db, 'homepage/photo'), e.target.result).then(() => alert('照片已更新')); reader.readAsDataURL(file); };
