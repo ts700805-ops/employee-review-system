@@ -11,7 +11,7 @@
     main { flex: 1; padding: 30px; }
     .card { background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .btn { padding: 10px 20px; cursor: pointer; background: #0a3d2e; color: white; border: none; border-radius: 5px; }
-    input { padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; width: 100%; max-width: 300px; }
+    input, select { padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; width: 100%; max-width: 300px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
     th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
     .version { font-size: 12px; color: #888; margin-bottom: 20px; }
@@ -20,7 +20,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260531-06</div>
+  <div class="version">版本: 20260531-07</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
@@ -68,10 +68,23 @@
       renderTeams();
       renderSkillsAdmin();
     } else {
-      content.innerHTML = `<h1>技能總表</h1><div id="skillTable"></div>`;
-      renderSkills();
+      content.innerHTML = `
+        <h1>技能總表</h1>
+        <select id="leaderFilter" onchange="renderSkills()"><option value="">請選擇組長</option></select>
+        <div id="skillTable"></div>`;
+      setupLeaderFilter();
     }
   };
+
+  function setupLeaderFilter() {
+    onValue(ref(db, 'teams'), (s) => {
+      const data = s.val() || {};
+      const filter = document.getElementById('leaderFilter');
+      let options = `<option value="">請選擇組長</option>`;
+      for (let l in data) options += `<option value="${l}">${l}</option>`;
+      filter.innerHTML = options;
+    });
+  }
 
   window.uploadPhoto = () => {
     const file = document.getElementById('photoInput').files[0];
@@ -120,33 +133,26 @@
     set(ref(db, `skills/${l}/${m}`), document.getElementById(`e_${l}_${m}`).value).then(() => alert('更新成功'));
   };
 
-  function renderSkills() {
-    onValue(ref(db, 'skills'), (s) => {
+  window.renderSkills = () => {
+    const selectedLeader = document.getElementById('leaderFilter').value;
+    if (!selectedLeader) { document.getElementById('skillTable').innerHTML = ''; return; }
+    
+    onValue(ref(db, `skills/${selectedLeader}`), (s) => {
       const data = s.val() || {};
-      let members = new Set();
       let skillSet = new Set();
-      
-      // 解析所有技能
-      for(let l in data) { 
-        for(let m in data[l]) { 
-          members.add(m);
-          let userSkills = data[l][m].split(',');
-          userSkills.forEach(sk => skillSet.add(sk.trim()));
-        } 
+      for(let m in data) { 
+        data[m].split(',').forEach(sk => skillSet.add(sk.trim()));
       }
       
       let skillsArray = Array.from(skillSet);
       let html = `<table><tr><th>組員</th>` + skillsArray.map(s => `<th>${s}</th>`).join('') + `</tr>`;
       
-      members.forEach(m => {
+      for(let m in data) {
         html += `<tr><td>${m}</td>` + skillsArray.map(sk => {
-          let has = false;
-          for(let l in data) {
-            if(data[l][m] && data[l][m].split(',').map(s => s.trim()).includes(sk)) has = true;
-          }
+          let has = data[m].split(',').map(s => s.trim()).includes(sk);
           return `<td>${has ? '✓' : ''}</td>`;
         }).join('') + `</tr>`;
-      });
+      }
       document.getElementById('skillTable').innerHTML = html + `</table>`;
     });
   }
