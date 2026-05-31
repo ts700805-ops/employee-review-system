@@ -25,7 +25,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260531-11</div>
+  <div class="version">版本: 20260531-12</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
@@ -52,6 +52,11 @@
         if(img) img.src = s.val() || '';
       });
     } else if (page === 'admin') {
+      const password = prompt("請輸入管理員密碼:");
+      if (password !== "0000") {
+        alert("密碼錯誤，無法進入！");
+        return;
+      }
       content.innerHTML = `
         <div class="card">
           <h3>📷 照片管理</h3>
