@@ -1,33 +1,43 @@
+這次的版本更新為 **20260602-21**。
+
+### 本次修正重點：
+
+1. **亮色系配色方案**：將整體介面（表格、導航、卡片）調整為更明亮、柔和的配色。
+2. **字體優化**：顯著增加了字體大小，將文字顏色改為深黑色，確保在亮色背景下閱讀更加清晰舒適。
+3. **功能維持**：確保 6S Check 下載 CSV、漸層紫色技能總表、Firebase 同步及所有原有邏輯運作正常。
+
+請將您的 `index.html` 更新為以下程式碼：
+
+```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
   <title>員工評核系統</title>
   <style>
-    body { font-family: sans-serif; display: flex; margin: 0; background: #f4f7f6; }
-    nav { width: 220px; background: #0a3d2e; color: white; height: 100vh; padding: 20px; }
-    nav div { padding: 15px; cursor: pointer; border-bottom: 1px solid #1a5e4d; }
-    nav div:hover { background: #1a5e4d; }
-    main { flex: 1; padding: 30px; }
-    .card { background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .btn { padding: 10px 20px; cursor: pointer; background: #0a3d2e; color: white; border: none; border-radius: 5px; }
-    input, select { padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; width: 100%; max-width: 300px; }
-    .version { font-size: 12px; color: #888; margin-bottom: 20px; }
-    hr { margin: 20px 0; border: 0; border-top: 1px solid #eee; }
-    .gradient-bg { background: linear-gradient(135deg, #4b0082, #800080, #9932cc); color: white; padding: 30px; border-radius: 15px; }
-    .skill-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    .skill-table th, .skill-table td { border: 1px solid #ddd; padding: 12px; text-align: center; }
-    .skill-table th { background: #0a3d2e; color: white; font-weight: bold; }
-    .skill-table td { font-weight: bold; }
+    body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f0f2f5; color: #333; font-size: 16px; }
+    nav { width: 240px; background: #e0e7ff; color: #1e293b; height: 100vh; padding: 20px; border-right: 1px solid #cbd5e1; }
+    nav div { padding: 18px; cursor: pointer; border-bottom: 1px solid #cbd5e1; font-weight: bold; }
+    nav div:hover { background: #c7d2fe; }
+    main { flex: 1; padding: 40px; }
+    .card { background: white; padding: 30px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .btn { padding: 12px 24px; cursor: pointer; background: #4f46e5; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
+    input, select { padding: 12px; margin: 8px 0; border: 2px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; width: 100%; max-width: 400px; font-size: 16px; }
+    .version { font-size: 14px; color: #64748b; margin-bottom: 20px; }
+    hr { margin: 25px 0; border: 0; border-top: 2px solid #f1f5f9; }
+    .gradient-bg { background: linear-gradient(135deg, #a855f7, #d946ef); color: white; padding: 40px; border-radius: 20px; }
+    .skill-table { width: 100%; border-collapse: collapse; margin-top: 25px; background: white; }
+    .skill-table th, .skill-table td { border: 2px solid #e2e8f0; padding: 18px; text-align: center; color: #1e293b; font-size: 18px; }
+    .skill-table th { background: #f8fafc; font-weight: 800; }
     .skill-table td:nth-child(1), .skill-table td:nth-child(2) { text-align: left; }
-    .circle-progress { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 10px auto; background: radial-gradient(closest-side, white 80%, transparent 0 99%, white 0), conic-gradient(#4b0082 var(--p, 0%), #ddd 0); }
-    .eval-card { display: inline-block; width: 180px; background: white; padding: 15px; margin: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .circle-progress { width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 15px auto; background: radial-gradient(closest-side, white 80%, transparent 0 99%, white 0), conic-gradient(#4f46e5 var(--p, 0%), #e2e8f0 0); }
+    .eval-card { display: inline-block; width: 220px; background: white; padding: 20px; margin: 15px; border-radius: 15px; text-align: center; border: 1px solid #e2e8f0; }
   </style>
 </head>
 <body>
 
 <nav>
-  <div class="version">版本: 20260602-20</div>
+  <div class="version">版本: 20260602-21</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -52,7 +62,7 @@
   const getColor = (cat) => {
     if(!categoryColors[cat]) {
       const hue = Math.floor(Math.random() * 360);
-      categoryColors[cat] = `hsl(${hue}, 30%, 30%)`;
+      categoryColors[cat] = `hsl(${hue}, 80%, 90%)`;
     }
     return categoryColors[cat];
   };
@@ -76,10 +86,10 @@
         <div class="card"><h3>🛠️ 技能設定</h3><select id="sLeaderSelect" onchange="updateMemberSelect()"><option value="">選擇組長</option></select><br><select id="sMemberSelect"><option value="">請先選擇組長</option></select><br><input type="text" id="sName" placeholder="技能名稱(逗號分隔)"><br><button class="btn" onclick="addSkill()">新增技能</button><hr><div id="skillEditArea"></div></div>`;
       renderTeams(); loadLeaders();
     } else if (page === 'eval') {
-      content.innerHTML = `<h1>💡 技能評核進度表</h1><select id="evalLeaderFilter" onchange="renderEval()" style="color:black;"><option value="">請選擇組長</option></select><div id="evalArea"></div>`;
+      content.innerHTML = `<h1>💡 技能評核進度表</h1><select id="evalLeaderFilter" onchange="renderEval()"><option value="">請選擇組長</option></select><div id="evalArea"></div>`;
       setupEvalFilter();
     } else {
-      content.innerHTML = `<div class="gradient-bg"><h1>📊 技能總表</h1><p>請選擇組長過濾人員：</p><select id="leaderFilter" onchange="renderSkills()" style="color:black;"><option value="">請選擇組長</option></select><div id="skillTable"></div></div>`;
+      content.innerHTML = `<div class="gradient-bg"><h1>📊 技能總表</h1><p>請選擇組長過濾人員：</p><select id="leaderFilter" onchange="renderSkills()"><option value="">請選擇組長</option></select><div id="skillTable"></div></div>`;
       setupLeaderFilter();
     }
   };
@@ -120,7 +130,7 @@
       for(let key in data) {
         total += parseInt(data[key].score) || 0;
         const color = getColor(data[key].cat);
-        html += `<tr style="background:${color}; color:white;"><td>${data[key].cat}</td><td>${data[key].item}</td><td>${data[key].score}</td>
+        html += `<tr style="background:${color};"><td>${data[key].cat}</td><td>${data[key].item}</td><td>${data[key].score}</td>
           <td><button onclick="viewImg('${data[key].before}')">查看</button></td>
           <td><button onclick="viewImg('${data[key].after}')">查看</button></td>
           <td><button onclick="edit6S('${key}',${JSON.stringify(data[key]).replace(/"/g, '&quot;')})">編輯</button>
@@ -181,7 +191,6 @@
   window.del6S = (unit, key) => { if(confirm('確定刪除?')) remove(ref(db, `6s/${unit}/${key}`)); };
   window.viewImg = (src) => { if(src && src !== 'null') { const win = window.open(); win.document.write(`<img src="${src}" style="max-width:100%">`); } else alert('無照片'); };
 
-  // 其他函數保持不變...
   function setupEvalFilter() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const filter = document.getElementById('evalLeaderFilter'); if(filter) filter.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
   window.renderEval = () => { const leader = document.getElementById('evalLeaderFilter').value; const area = document.getElementById('evalArea'); if(!leader) { area.innerHTML = ''; return; } onValue(ref(db, 'teams/' + leader), (s) => { const members = (s.val() || "").split(','); onValue(ref(db, 'evaluations/' + leader), (snapshot) => { const scores = snapshot.val() || {}; let html = `<h3>檢視：【${leader}組】</h3>`; members.forEach(m => { const name = m.trim(); const score = scores[name] || "0%"; const p = score.replace('%', ''); html += `<div class="eval-card"><div>👤 ${name}</div><div class="circle-progress" style="--p:${p}%"><span>${score}</span></div><select id="score_${name}"><option value="0%" ${score=='0%'?'selected':''}>0%</option><option value="20%" ${score=='20%'?'selected':''}>20%</option><option value="40%" ${score=='40%'?'selected':''}>40%</option><option value="60%" ${score=='60%'?'selected':''}>60%</option><option value="80%" ${score=='80%'?'selected':''}>80%</option><option value="100%" ${score=='100%'?'selected':''}>100%</option></select><br><button class="btn" style="margin-top:5px;" onclick="saveScore('${leader}','${name}')">儲存</button></div>`; }); area.innerHTML = html; }); }); };
   window.saveScore = (l, m) => { const val = document.getElementById('score_' + m).value; set(ref(db, `evaluations/${l}/${m}`), val).then(() => alert('已儲存: ' + val)); };
@@ -201,3 +210,5 @@
 </script>
 </body>
 </html>
+
+```
