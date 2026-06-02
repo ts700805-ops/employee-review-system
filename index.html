@@ -11,6 +11,7 @@
     main { flex: 1; padding: 40px; }
     .card { background: white; padding: 30px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
     .btn { padding: 12px 24px; cursor: pointer; background: #4f46e5; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; }
+    .btn-photo { background: #0ea5e9; color: white; padding: 8px 16px; border-radius: 5px; border: none; cursor: pointer; }
     input, select, textarea { padding: 12px; margin: 8px 0; border: 2px solid #000; border-radius: 8px; box-sizing: border-box; width: 100%; max-width: 400px; font-size: 18px; font-weight: bold; }
     .version { font-size: 16px; color: #000; margin-bottom: 20px; }
     hr { margin: 25px 0; border: 0; border-top: 2px solid #000; }
@@ -26,7 +27,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260602-25</div>
+  <div class="version">版本: 20260602-26</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -120,9 +121,10 @@
       for(let key in data) {
         total += parseInt(data[key].score) || 0;
         const color = getColor(data[key].cat);
+        const bBtn = data[key].before ? `<button class="btn-photo" onclick="viewImg('${data[key].before}')">查看</button>` : '無';
+        const aBtn = data[key].after ? `<button class="btn-photo" onclick="viewImg('${data[key].after}')">查看</button>` : '無';
         html += `<tr style="background:${color};"><td>${data[key].cat}</td><td>${data[key].item}</td><td>${data[key].score}</td><td>${data[key].note || ''}</td><td>${data[key].improve || ''}</td>
-          <td><button onclick="viewImg('${data[key].before}')">查看</button></td>
-          <td><button onclick="viewImg('${data[key].after}')">查看</button></td>
+          <td>${bBtn}</td><td>${aBtn}</td>
           <td><button onclick="edit6S('${key}',${JSON.stringify(data[key]).replace(/"/g, '&quot;')})">編輯</button>
               <button onclick="del6S('${unit}','${key}')">刪除</button></td></tr>`;
       }
@@ -179,7 +181,7 @@
   window.addTeam = () => { const leader = document.getElementById('ln').value; const members = document.getElementById('ml').value; if(!leader || !members) return alert('請輸入完整資訊'); set(ref(db, 'teams/' + leader), members).then(() => { alert('組別儲存成功'); }); };
   window.addSkill = () => { const l = document.getElementById('sLeaderSelect').value; const m = document.getElementById('sMemberSelect').value; const s = document.getElementById('sName').value; if(!l || !m || !s) { alert('請填寫完整技能資訊'); return; } set(ref(db, `skills/${l}/${m}`), s).then(() => { alert('技能已新增'); }); };
   function renderTeams() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const container = document.getElementById('teamList'); if(!container) return; let html = `<h4>目前人員配置：</h4>`; for (let l in data) { html += `<div style="margin-bottom:10px;"><strong>${l}組：</strong><br><input id="e_team_${l}" value="${data[l]}"> <button class="btn" onclick="saveEditTeam('${l}')">儲存</button></div>`; } container.innerHTML = html; }); }
-  window.saveEditTeam = (l) => { set(ref(db, 'teams/' + l), document.getElementById('e_team_${l}').value).then(() => alert('更新成功')); };
+  window.saveEditTeam = (l) => { set(ref(db, 'teams/' + l), document.getElementById('e_team_' + l).value).then(() => alert('更新成功')); };
   function renderSkillsAdminByLeader(leader) { onValue(ref(db, `skills/${leader}`), (s) => { const data = s.val() || {}; const container = document.getElementById('skillEditArea'); if(!container) return; let html = `<h4>${leader}組 目前技能清單：</h4>`; for (let m in data) { html += `<div style="margin-bottom:10px;"><strong>${m}：</strong><br><input id="e_skill_${leader}_${m}" value="${data[m]}"> <button class="btn" onclick="saveEditSkill('${leader}','${m}')">儲存</button></div>`; } container.innerHTML = html; }); }
   window.saveEditSkill = (l, m) => { set(ref(db, `skills/${l}/${m}`), document.getElementById(`e_skill_${l}_${m}`).value).then(() => alert('更新成功')); };
   function setupLeaderFilter() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const filter = document.getElementById('leaderFilter'); if(filter) filter.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
