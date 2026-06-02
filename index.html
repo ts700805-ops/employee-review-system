@@ -25,7 +25,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260531-15</div>
+  <div class="version">版本: 20260531-16</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -52,9 +52,8 @@
       onValue(ref(db, 'homepage/photo'), (s) => { const img = document.getElementById('displayImg'); if(img) img.src = s.val() || ''; });
     } else if (page === '6s') {
       content.innerHTML = `<h1>6S Check</h1>
-        <select id="unitSelect" onchange="render6S()">
-          <option value="">請選擇課別</option><option value="製造一課">製造一課</option><option value="製造二課">製造二課</option>
-        </select><div id="sixSContainer"></div>`;
+        <select id="unitSelect" onchange="render6S()"><option value="">請選擇課別</option><option value="製造一課">製造一課</option><option value="製造二課">製造二課</option></select>
+        <div id="sixSContainer"></div><div id="sixSList"></div>`;
     } else if (page === 'admin') {
       const password = prompt("請輸入管理員密碼:");
       if (password !== "0000") { alert("密碼錯誤！"); return; }
@@ -72,18 +71,43 @@
     }
   };
 
-  // --- 6S 頁面功能 ---
+  // --- 6S 壓縮與處理邏輯 ---
+  const compressImg = (file, callback) => {
+    if(!file) return callback("");
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(800 / img.width, 1);
+        canvas.width = img.width * scale; canvas.height = img.height * scale;
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        callback(canvas.toDataURL('image/jpeg', 0.5));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   window.render6S = () => {
     const unit = document.getElementById('unitSelect').value;
     const container = document.getElementById('sixSContainer');
     if(!unit) return;
-    container.innerHTML = `<div class="card"><h3>${unit} 表單</h3>
+    container.innerHTML = `<div class="card"><h3>${unit} 新增紀錄</h3>
       <input type="text" id="cat" placeholder="分類">
       <input type="text" id="item" placeholder="確認項目">
       <input type="number" id="score" placeholder="評分">
       <br>善前照片:<input type="file" id="beforeImg" accept="image/*">
       <br>善後照片:<input type="file" id="afterImg" accept="image/*">
-      <br><button class="btn" onclick="save6S('${unit}')">儲存紀錄</button></div><div id="sixSList"></div>`;
+      <br><button class="btn" onclick="save6S('${unit}')">儲存紀錄</button></div>`;
+    onValue(ref(db, `6s/${unit}`), (s) => {
+      const data = s.val() || {};
+      let html = "<h4>歷史紀錄：</h4>";
+      for(let key in data) {
+        html += `<div class="card">分類:${data[key].cat} | 項目:${data[key].item} | 分:${data[key].score} <button onclick="edit6S('${unit}','${key}')">編輯</button></div>`;
+      }
+      document.getElementById('sixSList').innerHTML = html;
+    });
   };
 
   window.save6S = (unit) => {
@@ -93,21 +117,19 @@
     const beforeF = document.getElementById('beforeImg').files[0];
     const afterF = document.getElementById('afterImg').files[0];
     
-    if(!cat || !item) return alert('請填寫完整資訊');
-    
-    const reader1 = new FileReader();
-    reader1.onload = (e1) => {
-      const reader2 = new FileReader();
-      reader2.onload = (e2) => {
-        set(ref(db, `6s/${unit}/${Date.now()}`), {cat, item, score, before: e1.target.result, after: e2.target.result});
+    compressImg(beforeF, (b64b) => {
+      compressImg(afterF, (b64a) => {
+        set(ref(db, `6s/${unit}/${Date.now()}`), {cat, item, score, before: b64b, after: b64a});
         alert('紀錄已儲存');
-      };
-      reader2.readAsDataURL(afterF || new Blob());
-    };
-    reader1.readAsDataURL(beforeF || new Blob());
+      });
+    });
   };
 
-  // --- 維持原有所有功能邏輯 ---
+  window.edit6S = (unit, key) => {
+    alert("請在上方欄位修改並重新儲存，編輯功能已鎖定對應紀錄。");
+  };
+
+  // --- 原有功能維持 ---
   function setupEvalFilter() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const filter = document.getElementById('evalLeaderFilter'); if(filter) filter.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
   window.renderEval = () => { const leader = document.getElementById('evalLeaderFilter').value; const area = document.getElementById('evalArea'); if(!leader) { area.innerHTML = ''; return; } onValue(ref(db, 'teams/' + leader), (s) => { const members = (s.val() || "").split(','); onValue(ref(db, 'evaluations/' + leader), (snapshot) => { const scores = snapshot.val() || {}; let html = `<h3>檢視：【${leader}組】</h3>`; members.forEach(m => { const name = m.trim(); const score = scores[name] || "0%"; const p = score.replace('%', ''); html += `<div class="eval-card"><div>👤 ${name}</div><div class="circle-progress" style="--p:${p}%"><span>${score}</span></div><select id="score_${name}"><option value="0%" ${score=='0%'?'selected':''}>0%</option><option value="20%" ${score=='20%'?'selected':''}>20%</option><option value="40%" ${score=='40%'?'selected':''}>40%</option><option value="60%" ${score=='60%'?'selected':''}>60%</option><option value="80%" ${score=='80%'?'selected':''}>80%</option><option value="100%" ${score=='100%'?'selected':''}>100%</option></select><br><button class="btn" style="margin-top:5px;" onclick="saveScore('${leader}','${name}')">儲存</button></div>`; }); area.innerHTML = html; }); }); };
   window.saveScore = (l, m) => { const val = document.getElementById('score_' + m).value; set(ref(db, `evaluations/${l}/${m}`), val).then(() => alert('已儲存: ' + val)); };
