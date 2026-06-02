@@ -15,9 +15,9 @@
     .version { font-size: 12px; color: #888; margin-bottom: 20px; }
     hr { margin: 20px 0; border: 0; border-top: 1px solid #eee; }
     .gradient-bg { background: linear-gradient(135deg, #4b0082, #800080, #9932cc); color: white; padding: 30px; border-radius: 15px; }
-    .skill-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #4b0082; border-radius: 10px; overflow: hidden; color: white; border: 1px solid #800080; }
-    .skill-table th, .skill-table td { border: 1px solid #800080; padding: 12px; text-align: center; }
-    .skill-table th { background: #300030; color: white; }
+    .skill-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; color: black; border: 1px solid #ddd; }
+    .skill-table th, .skill-table td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+    .skill-table th { background: #f2f2f2; }
     .circle-progress { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 10px auto; background: radial-gradient(closest-side, white 80%, transparent 0 99%, white 0), conic-gradient(#4b0082 var(--p, 0%), #ddd 0); }
     .eval-card { display: inline-block; width: 180px; background: white; padding: 15px; margin: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
   </style>
@@ -25,7 +25,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260531-16</div>
+  <div class="version">版本: 20260531-17</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -37,13 +37,15 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+  import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
   const db = getDatabase(initializeApp({
     apiKey: "AIzaSyAPBXphipNLgAHuqPg0HZ-J8HIqc9hQHc",
     databaseURL: "https://employee-review-system-4a32d-default-rtdb.firebaseio.com",
     projectId: "employee-review-system-4a32d"
   }));
+
+  window.currentEditKey = null;
 
   window.showPage = (page) => {
     const content = document.getElementById('content');
@@ -71,9 +73,8 @@
     }
   };
 
-  // --- 6S 壓縮與處理邏輯 ---
   const compressImg = (file, callback) => {
-    if(!file) return callback("");
+    if(!file) return callback(null);
     const reader = new FileReader();
     reader.onload = e => {
       const img = new Image();
@@ -93,19 +94,27 @@
     const unit = document.getElementById('unitSelect').value;
     const container = document.getElementById('sixSContainer');
     if(!unit) return;
-    container.innerHTML = `<div class="card"><h3>${unit} 新增紀錄</h3>
+    container.innerHTML = `<div class="card"><h3>${unit} 表單</h3>
       <input type="text" id="cat" placeholder="分類">
       <input type="text" id="item" placeholder="確認項目">
       <input type="number" id="score" placeholder="評分">
       <br>善前照片:<input type="file" id="beforeImg" accept="image/*">
       <br>善後照片:<input type="file" id="afterImg" accept="image/*">
       <br><button class="btn" onclick="save6S('${unit}')">儲存紀錄</button></div>`;
+    
     onValue(ref(db, `6s/${unit}`), (s) => {
       const data = s.val() || {};
-      let html = "<h4>歷史紀錄：</h4>";
+      let html = `<table class="skill-table"><tr><th>分類</th><th>項目</th><th>分數</th><th>善前</th><th>善後</th><th>操作</th></tr>`;
+      let total = 0;
       for(let key in data) {
-        html += `<div class="card">分類:${data[key].cat} | 項目:${data[key].item} | 分:${data[key].score} <button onclick="edit6S('${unit}','${key}')">編輯</button></div>`;
+        total += parseInt(data[key].score) || 0;
+        html += `<tr><td>${data[key].cat}</td><td>${data[key].item}</td><td>${data[key].score}</td>
+          <td><button onclick="viewImg('${data[key].before}')">查看</button></td>
+          <td><button onclick="viewImg('${data[key].after}')">查看</button></td>
+          <td><button onclick="edit6S('${key}','${data[key].cat}','${data[key].item}','${data[key].score}')">編輯</button>
+              <button onclick="del6S('${unit}','${key}')">刪除</button></td></tr>`;
       }
+      html += `<tr><td colspan="2"><b>總分</b></td><td><b>${total}</b></td><td colspan="3"></td></tr></table>`;
       document.getElementById('sixSList').innerHTML = html;
     });
   };
@@ -114,22 +123,28 @@
     const cat = document.getElementById('cat').value;
     const item = document.getElementById('item').value;
     const score = document.getElementById('score').value;
-    const beforeF = document.getElementById('beforeImg').files[0];
-    const afterF = document.getElementById('afterImg').files[0];
-    
-    compressImg(beforeF, (b64b) => {
-      compressImg(afterF, (b64a) => {
-        set(ref(db, `6s/${unit}/${Date.now()}`), {cat, item, score, before: b64b, after: b64a});
-        alert('紀錄已儲存');
+    const key = window.currentEditKey || Date.now();
+    compressImg(document.getElementById('beforeImg').files[0], (b64b) => {
+      compressImg(document.getElementById('afterImg').files[0], (b64a) => {
+        set(ref(db, `6s/${unit}/${key}`), {cat, item, score, before: b64b || "", after: b64a || ""});
+        window.currentEditKey = null;
+        alert('已儲存');
       });
     });
   };
 
-  window.edit6S = (unit, key) => {
-    alert("請在上方欄位修改並重新儲存，編輯功能已鎖定對應紀錄。");
+  window.edit6S = (k, c, i, s) => {
+    window.currentEditKey = k;
+    document.getElementById('cat').value = c;
+    document.getElementById('item').value = i;
+    document.getElementById('score').value = s;
+    alert("已載入資料至上方，修改後請點選儲存。");
   };
 
-  // --- 原有功能維持 ---
+  window.del6S = (unit, key) => { if(confirm('確定刪除?')) remove(ref(db, `6s/${unit}/${key}`)); };
+  window.viewImg = (src) => { if(src) { const win = window.open(); win.document.write(`<img src="${src}" style="max-width:100%">`); } else alert('無照片'); };
+
+  // --- 維持原有功能 ---
   function setupEvalFilter() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const filter = document.getElementById('evalLeaderFilter'); if(filter) filter.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
   window.renderEval = () => { const leader = document.getElementById('evalLeaderFilter').value; const area = document.getElementById('evalArea'); if(!leader) { area.innerHTML = ''; return; } onValue(ref(db, 'teams/' + leader), (s) => { const members = (s.val() || "").split(','); onValue(ref(db, 'evaluations/' + leader), (snapshot) => { const scores = snapshot.val() || {}; let html = `<h3>檢視：【${leader}組】</h3>`; members.forEach(m => { const name = m.trim(); const score = scores[name] || "0%"; const p = score.replace('%', ''); html += `<div class="eval-card"><div>👤 ${name}</div><div class="circle-progress" style="--p:${p}%"><span>${score}</span></div><select id="score_${name}"><option value="0%" ${score=='0%'?'selected':''}>0%</option><option value="20%" ${score=='20%'?'selected':''}>20%</option><option value="40%" ${score=='40%'?'selected':''}>40%</option><option value="60%" ${score=='60%'?'selected':''}>60%</option><option value="80%" ${score=='80%'?'selected':''}>80%</option><option value="100%" ${score=='100%'?'selected':''}>100%</option></select><br><button class="btn" style="margin-top:5px;" onclick="saveScore('${leader}','${name}')">儲存</button></div>`; }); area.innerHTML = html; }); }); };
   window.saveScore = (l, m) => { const val = document.getElementById('score_' + m).value; set(ref(db, `evaluations/${l}/${m}`), val).then(() => alert('已儲存: ' + val)); };
