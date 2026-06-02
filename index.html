@@ -24,7 +24,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260602-28</div>
+  <div class="version">版本: 20260602-29</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -45,11 +45,13 @@
   }));
 
   window.currentEditData = null;
+  // 優化配色邏輯，使用不同色相的色系
   const categoryColors = {};
   const getColor = (cat) => {
     if(!categoryColors[cat]) {
-      const hue = Math.floor(Math.random() * 360);
-      categoryColors[cat] = `hsl(${hue}, 70%, 90%)`;
+      const keys = Object.keys(categoryColors);
+      const hue = (keys.length * 55) % 360; // 確保每次新增分類都有明顯差異
+      categoryColors[cat] = `hsl(${hue}, 70%, 85%)`;
     }
     return categoryColors[cat];
   };
@@ -102,7 +104,6 @@
     const listDiv = document.getElementById('sixSList');
     if(!unit) return;
     
-    // 渲染上方表格
     onValue(ref(db, `6s/${unit}`), (s) => {
       const data = s.val() || {};
       let html = `<table class="skill-table"><tr><th>分類</th><th>項目</th><th>分數</th><th>現況說明</th><th>改善方式</th><th>善前</th><th>善後</th><th>操作</th></tr>`;
@@ -120,7 +121,6 @@
       listDiv.innerHTML = html;
     });
 
-    // 渲染下方表單
     container.innerHTML = `<div class="card"><h3>新增/編輯 ${unit} 資料</h3>
       <input type="text" id="cat" placeholder="分類">
       <input type="text" id="item" placeholder="確認項目">
@@ -145,7 +145,6 @@
       compressImg(document.getElementById('afterImg').files[0], (b64a) => {
         set(ref(db, `6s/${unit}/${key}`), { cat, item, score, note, improve, before: b64b || oldB, after: b64a || oldA });
         window.currentEditData = null; alert('儲存完成');
-        // 清空輸入框
         ['cat','item','score','note','improve'].forEach(id => document.getElementById(id).value = '');
       });
     });
