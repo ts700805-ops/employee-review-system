@@ -24,7 +24,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260602-27</div>
+  <div class="version">版本: 20260602-28</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -62,7 +62,7 @@
     } else if (page === '6s') {
       content.innerHTML = `<h1>6S Check</h1>
         <select id="unitSelect" onchange="render6S()"><option value="">請選擇課別</option><option value="製造一課">製造一課</option><option value="製造二課">製造二課</option></select>
-        <div id="sixSContainer"></div><hr><div id="sixSList"></div>`;
+        <div id="sixSList"></div><hr><div id="sixSContainer"></div>`;
     } else if (page === 'admin') {
       const password = prompt("請輸入管理員密碼:");
       if (password !== "0000") { alert("密碼錯誤！"); return; }
@@ -99,17 +99,10 @@
   window.render6S = () => {
     const unit = document.getElementById('unitSelect').value;
     const container = document.getElementById('sixSContainer');
+    const listDiv = document.getElementById('sixSList');
     if(!unit) return;
-    container.innerHTML = `<div class="card"><h3>${unit} 表單</h3>
-      <input type="text" id="cat" placeholder="分類">
-      <input type="text" id="item" placeholder="確認項目">
-      <input type="number" id="score" placeholder="評分">
-      <textarea id="note" placeholder="現況說明"></textarea>
-      <textarea id="improve" placeholder="改善方式"></textarea>
-      <div>善前照片:<input type="file" id="beforeImg" accept="image/*"></div>
-      <div>善後照片:<input type="file" id="afterImg" accept="image/*"></div>
-      <button class="btn" onclick="save6S('${unit}')">儲存紀錄</button></div>`;
     
+    // 渲染上方表格
     onValue(ref(db, `6s/${unit}`), (s) => {
       const data = s.val() || {};
       let html = `<table class="skill-table"><tr><th>分類</th><th>項目</th><th>分數</th><th>現況說明</th><th>改善方式</th><th>善前</th><th>善後</th><th>操作</th></tr>`;
@@ -124,8 +117,19 @@
               <button class="btn-action" onclick="del6S('${unit}','${key}')">刪除</button></td></tr>`;
       }
       html += `<tr><td colspan="2"><b>總分</b></td><td><b>${total}</b></td><td colspan="5"></td></tr></table>`;
-      document.getElementById('sixSList').innerHTML = html;
+      listDiv.innerHTML = html;
     });
+
+    // 渲染下方表單
+    container.innerHTML = `<div class="card"><h3>新增/編輯 ${unit} 資料</h3>
+      <input type="text" id="cat" placeholder="分類">
+      <input type="text" id="item" placeholder="確認項目">
+      <input type="number" id="score" placeholder="評分">
+      <textarea id="note" placeholder="現況說明"></textarea>
+      <textarea id="improve" placeholder="改善方式"></textarea>
+      <div>善前照片:<input type="file" id="beforeImg" accept="image/*"></div>
+      <div>善後照片:<input type="file" id="afterImg" accept="image/*"></div>
+      <button class="btn" onclick="save6S('${unit}')">儲存紀錄</button></div>`;
   };
 
   window.save6S = (unit) => {
@@ -141,6 +145,8 @@
       compressImg(document.getElementById('afterImg').files[0], (b64a) => {
         set(ref(db, `6s/${unit}/${key}`), { cat, item, score, note, improve, before: b64b || oldB, after: b64a || oldA });
         window.currentEditData = null; alert('儲存完成');
+        // 清空輸入框
+        ['cat','item','score','note','improve'].forEach(id => document.getElementById(id).value = '');
       });
     });
   };
@@ -152,7 +158,7 @@
     document.getElementById('score').value = data.score;
     document.getElementById('note').value = data.note;
     document.getElementById('improve').value = data.improve;
-    alert("已載入，修改後請點儲存");
+    alert("已載入資料至下方編輯區，修改後請點儲存");
   };
 
   window.del6S = (unit, key) => { if(confirm('確定刪除?')) remove(ref(db, `6s/${unit}/${key}`)); };
