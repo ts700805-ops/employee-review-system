@@ -26,7 +26,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260602-22</div>
+  <div class="version">版本: 20260602-23</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -108,25 +108,26 @@
       <input type="text" id="cat" placeholder="分類">
       <input type="text" id="item" placeholder="確認項目">
       <input type="number" id="score" placeholder="評分">
-      <textarea id="note" placeholder="備註說明"></textarea>
+      <textarea id="note" placeholder="現況說明"></textarea>
+      <textarea id="improve" placeholder="改善方式"></textarea>
       <br>善前照片:<input type="file" id="beforeImg" accept="image/*">
       <br>善後照片:<input type="file" id="afterImg" accept="image/*">
       <br><button class="btn" onclick="save6S('${unit}')">儲存紀錄</button></div>`;
     
     onValue(ref(db, `6s/${unit}`), (s) => {
       const data = s.val() || {};
-      let html = `<table class="skill-table"><tr><th>分類</th><th>項目</th><th>分數</th><th>備註</th><th>善前</th><th>善後</th><th>操作</th></tr>`;
+      let html = `<table class="skill-table"><tr><th>分類</th><th>項目</th><th>分數</th><th>現況說明</th><th>改善方式</th><th>善前</th><th>善後</th><th>操作</th></tr>`;
       let total = 0;
       for(let key in data) {
         total += parseInt(data[key].score) || 0;
         const color = getColor(data[key].cat);
-        html += `<tr style="background:${color};"><td>${data[key].cat}</td><td>${data[key].item}</td><td>${data[key].score}</td><td>${data[key].note || ''}</td>
+        html += `<tr style="background:${color};"><td>${data[key].cat}</td><td>${data[key].item}</td><td>${data[key].score}</td><td>${data[key].note || ''}</td><td>${data[key].improve || ''}</td>
           <td><button onclick="viewImg('${data[key].before}')">查看</button></td>
           <td><button onclick="viewImg('${data[key].after}')">查看</button></td>
           <td><button onclick="edit6S('${key}',${JSON.stringify(data[key]).replace(/"/g, '&quot;')})">編輯</button>
               <button onclick="del6S('${unit}','${key}')">刪除</button></td></tr>`;
       }
-      html += `<tr><td colspan="2"><b>總分</b></td><td><b>${total}</b></td><td colspan="4"></td></tr></table>`;
+      html += `<tr><td colspan="2"><b>總分</b></td><td><b>${total}</b></td><td colspan="5"></td></tr></table>`;
       document.getElementById('sixSList').innerHTML = html;
     });
   };
@@ -136,6 +137,7 @@
     const item = document.getElementById('item').value;
     const score = document.getElementById('score').value;
     const note = document.getElementById('note').value;
+    const improve = document.getElementById('improve').value;
     const key = window.currentEditData ? window.currentEditData.key : Date.now();
     const oldB = window.currentEditData ? window.currentEditData.before : "";
     const oldA = window.currentEditData ? window.currentEditData.after : "";
@@ -146,7 +148,7 @@
     compressImg(bFile, (b64b) => {
       compressImg(aFile, (b64a) => {
         set(ref(db, `6s/${unit}/${key}`), {
-          cat, item, score, note,
+          cat, item, score, note, improve,
           before: b64b || oldB, 
           after: b64a || oldA
         });
@@ -162,6 +164,7 @@
     document.getElementById('item').value = data.item;
     document.getElementById('score').value = data.score;
     document.getElementById('note').value = data.note || '';
+    document.getElementById('improve').value = data.improve || '';
     alert("已載入資料至上方，修改文字後點儲存即可。");
   };
 
@@ -177,7 +180,7 @@
   window.addTeam = () => { const leader = document.getElementById('ln').value; const members = document.getElementById('ml').value; if(!leader || !members) return alert('請輸入完整資訊'); set(ref(db, 'teams/' + leader), members).then(() => { alert('組別儲存成功'); }); };
   window.addSkill = () => { const l = document.getElementById('sLeaderSelect').value; const m = document.getElementById('sMemberSelect').value; const s = document.getElementById('sName').value; if(!l || !m || !s) { alert('請填寫完整技能資訊'); return; } set(ref(db, `skills/${l}/${m}`), s).then(() => { alert('技能已新增'); }); };
   function renderTeams() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const container = document.getElementById('teamList'); if(!container) return; let html = `<h4>目前人員配置：</h4>`; for (let l in data) { html += `<div style="margin-bottom:10px;"><strong>${l}組：</strong><br><input id="e_team_${l}" value="${data[l]}"> <button class="btn" onclick="saveEditTeam('${l}')">儲存</button></div>`; } container.innerHTML = html; }); }
-  window.saveEditTeam = (l) => { set(ref(db, 'teams/' + l), document.getElementById('e_team_${l}').value).then(() => alert('更新成功')); };
+  window.saveEditTeam = (l) => { set(ref(db, 'teams/' + l), document.getElementById('e_team_' + l).value).then(() => alert('更新成功')); };
   function renderSkillsAdminByLeader(leader) { onValue(ref(db, `skills/${leader}`), (s) => { const data = s.val() || {}; const container = document.getElementById('skillEditArea'); if(!container) return; let html = `<h4>${leader}組 目前技能清單：</h4>`; for (let m in data) { html += `<div style="margin-bottom:10px;"><strong>${m}：</strong><br><input id="e_skill_${leader}_${m}" value="${data[m]}"> <button class="btn" onclick="saveEditSkill('${leader}','${m}')">儲存</button></div>`; } container.innerHTML = html; }); }
   window.saveEditSkill = (l, m) => { set(ref(db, `skills/${l}/${m}`), document.getElementById(`e_skill_${l}_${m}`).value).then(() => alert('更新成功')); };
   function setupLeaderFilter() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const filter = document.getElementById('leaderFilter'); if(filter) filter.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
