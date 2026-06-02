@@ -18,13 +18,16 @@
     .skill-table th, .skill-table td { border: 2px solid #000; padding: 15px; text-align: left; color: #000; }
     .skill-table th { background: #f1f5f9; text-align: center; }
     .gradient-bg { background: linear-gradient(135deg, #e9d5ff, #f5d0fe); color: #000; padding: 40px; border-radius: 20px; border: 2px solid #a855f7; }
-    .circle-progress { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 10px auto; background: radial-gradient(closest-side, white 80%, transparent 0 99%, white 0), conic-gradient(#4f46e5 var(--p, 0%), #e2e8f0 0); }
+    /* 圓形百分比進度樣式 */
+    .eval-card { display: inline-block; width: 200px; text-align: center; padding: 20px; border: 2px solid #000; border-radius: 15px; margin: 10px; }
+    .circle-progress { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 15px auto; 
+      border: 8px solid #22c55e; font-size: 24px; color: #1e293b; font-weight: bold; }
   </style>
 </head>
 <body>
 
 <nav>
-  <div class="version">版本: 20260602-29</div>
+  <div class="version">版本: 20260602-30</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -45,16 +48,8 @@
   }));
 
   window.currentEditData = null;
-  // 優化配色邏輯，使用不同色相的色系
-  const categoryColors = {};
-  const getColor = (cat) => {
-    if(!categoryColors[cat]) {
-      const keys = Object.keys(categoryColors);
-      const hue = (keys.length * 55) % 360; // 確保每次新增分類都有明顯差異
-      categoryColors[cat] = `hsl(${hue}, 70%, 85%)`;
-    }
-    return categoryColors[cat];
-  };
+  const categoryColors = { "整理": "#fecaca", "整頓": "#fef08a", "清潔": "#bbf7d0", "清掃": "#bfdbfe", "素養": "#ddd6fe", "安全": "#fbcfe8" };
+  const getColor = (cat) => categoryColors[cat] || "#f1f5f9";
 
   window.showPage = (page) => {
     const content = document.getElementById('content');
@@ -103,61 +98,44 @@
     const container = document.getElementById('sixSContainer');
     const listDiv = document.getElementById('sixSList');
     if(!unit) return;
-    
     onValue(ref(db, `6s/${unit}`), (s) => {
       const data = s.val() || {};
       let html = `<table class="skill-table"><tr><th>分類</th><th>項目</th><th>分數</th><th>現況說明</th><th>改善方式</th><th>善前</th><th>善後</th><th>操作</th></tr>`;
       let total = 0;
       for(let key in data) {
         total += parseInt(data[key].score) || 0;
-        const color = getColor(data[key].cat);
-        html += `<tr style="background:${color};"><td>${data[key].cat}</td><td>${data[key].item}</td><td>${data[key].score}</td><td>${data[key].note}</td><td>${data[key].improve}</td>
-          <td>${data[key].before ? `<button class="btn-action" style="background:#f0abfc" onclick="viewImg('${data[key].before}')">查看</button>` : '無'}</td>
-          <td>${data[key].after ? `<button class="btn-action" style="background:#7dd3fc" onclick="viewImg('${data[key].after}')">查看</button>` : '無'}</td>
+        html += `<tr style="background:${getColor(data[key].cat)};"><td>${data[key].cat}</td><td style="text-align:left;">${data[key].item}</td><td>${data[key].score}</td><td>${data[key].note}</td><td>${data[key].improve}</td>
+          <td>${data[key].before ? `<button class="btn-action" style="background:#f0abfc" onclick="viewImg('${data[key].before}')">📷查看</button>` : '無'}</td>
+          <td>${data[key].after ? `<button class="btn-action" style="background:#7dd3fc" onclick="viewImg('${data[key].after}')">📷查看</button>` : '無'}</td>
           <td><button class="btn-action" onclick="edit6S('${key}',${JSON.stringify(data[key]).replace(/"/g, '&quot;')})">編輯</button>
               <button class="btn-action" onclick="del6S('${unit}','${key}')">刪除</button></td></tr>`;
       }
       html += `<tr><td colspan="2"><b>總分</b></td><td><b>${total}</b></td><td colspan="5"></td></tr></table>`;
       listDiv.innerHTML = html;
     });
-
     container.innerHTML = `<div class="card"><h3>新增/編輯 ${unit} 資料</h3>
-      <input type="text" id="cat" placeholder="分類">
-      <input type="text" id="item" placeholder="確認項目">
-      <input type="number" id="score" placeholder="評分">
-      <textarea id="note" placeholder="現況說明"></textarea>
-      <textarea id="improve" placeholder="改善方式"></textarea>
-      <div>善前照片:<input type="file" id="beforeImg" accept="image/*"></div>
-      <div>善後照片:<input type="file" id="afterImg" accept="image/*"></div>
+      <input type="text" id="cat" placeholder="分類"> <input type="text" id="item" placeholder="確認項目"> <input type="number" id="score" placeholder="評分">
+      <textarea id="note" placeholder="現況說明"></textarea> <textarea id="improve" placeholder="改善方式"></textarea>
+      <div>善前照片:<input type="file" id="beforeImg" accept="image/*"></div> <div>善後照片:<input type="file" id="afterImg" accept="image/*"></div>
       <button class="btn" onclick="save6S('${unit}')">儲存紀錄</button></div>`;
   };
 
   window.save6S = (unit) => {
-    const cat = document.getElementById('cat').value;
-    const item = document.getElementById('item').value;
-    const score = document.getElementById('score').value;
-    const note = document.getElementById('note').value;
-    const improve = document.getElementById('improve').value;
     const key = window.currentEditData ? window.currentEditData.key : Date.now();
     const oldB = window.currentEditData ? window.currentEditData.before : "";
     const oldA = window.currentEditData ? window.currentEditData.after : "";
     compressImg(document.getElementById('beforeImg').files[0], (b64b) => {
       compressImg(document.getElementById('afterImg').files[0], (b64a) => {
-        set(ref(db, `6s/${unit}/${key}`), { cat, item, score, note, improve, before: b64b || oldB, after: b64a || oldA });
+        set(ref(db, `6s/${unit}/${key}`), { cat: document.getElementById('cat').value, item: document.getElementById('item').value, score: document.getElementById('score').value, note: document.getElementById('note').value, improve: document.getElementById('improve').value, before: b64b || oldB, after: b64a || oldA });
         window.currentEditData = null; alert('儲存完成');
-        ['cat','item','score','note','improve'].forEach(id => document.getElementById(id).value = '');
       });
     });
   };
 
   window.edit6S = (k, data) => {
     window.currentEditData = {key: k, ...data};
-    document.getElementById('cat').value = data.cat;
-    document.getElementById('item').value = data.item;
-    document.getElementById('score').value = data.score;
-    document.getElementById('note').value = data.note;
-    document.getElementById('improve').value = data.improve;
-    alert("已載入資料至下方編輯區，修改後請點儲存");
+    document.getElementById('cat').value = data.cat; document.getElementById('item').value = data.item;
+    document.getElementById('score').value = data.score; document.getElementById('note').value = data.note; document.getElementById('improve').value = data.improve;
   };
 
   window.del6S = (unit, key) => { if(confirm('確定刪除?')) remove(ref(db, `6s/${unit}/${key}`)); };
@@ -174,7 +152,7 @@
         let html = `<h3>${leader}組成員：</h3>`;
         members.forEach(m => {
           const score = scores[m.trim()] || "0%";
-          html += `<div class="eval-card"><div>👤 ${m.trim()}</div><div class="circle-progress" style="--p:${score.replace('%','')}"><span>${score}</span></div>
+          html += `<div class="eval-card"><div>👤 ${m.trim()}</div><div class="circle-progress"><span>${score}</span></div>
             <select id="s_${m.trim()}">${['0%','20%','40%','60%','80%','100%'].map(v=>`<option value="${v}" ${score==v?'selected':''}>${v}</option>`).join('')}</select>
             <button class="btn" onclick="saveScore('${leader}','${m.trim()}')">儲存</button></div>`;
         });
@@ -194,7 +172,7 @@
   window.addTeam = () => set(ref(db, 'teams/' + document.getElementById('ln').value), document.getElementById('ml').value);
   window.addSkill = () => set(ref(db, `skills/${document.getElementById('sLeaderSelect').value}/${document.getElementById('sMemberSelect').value}`), document.getElementById('sName').value);
   function renderTeams() { onValue(ref(db, 'teams'), (s) => { let h = '<h4>目前人員配置：</h4>'; for(let l in s.val()||{}) h += `<div>${l}：<input id="e_${l}" value="${s.val()[l]}"><button onclick="set(ref(db,'teams/${l}'),document.getElementById('e_${l}').value)">儲存</button></div>`; document.getElementById('teamList').innerHTML = h; }); }
-  function renderSkillsAdminByLeader(leader) { onValue(ref(db, `skills/${leader}`), (s) => { let h = `<h4>${leader}技能：</h4>`; for(let m in s.val()||{}) h += `<div>${m}：<input id="es_${m}" value="${s.val()[m]}"><button onclick="set(ref(db,'skills/${leader}/${m}'),document.getElementById('es_${m}').value)">儲存</button></div>`; document.getElementById('skillEditArea').innerHTML = h; }); }
+  function renderSkillsAdminByLeader(leader) { onValue(ref(db, `skills/${leader}`), (s) => { let h = `<h4>${leader}技能：</h4>`; for(let m in s.val()||{}) h += `<div>${m}：<input id="es_${m}" value="${s.val()[m]}"><button onclick="set(ref(db,'skills/${leader}/${m}'),document.getElementById('es_${m}'),value)">儲存</button></div>`; document.getElementById('skillEditArea').innerHTML = h; }); }
   function setupLeaderFilter() { onValue(ref(db, 'teams'), (s) => { document.getElementById('leaderFilter').innerHTML = '<option value="">請選擇組長</option>' + Object.keys(s.val()||{}).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
   window.renderSkills = () => {
     const leader = document.getElementById('leaderFilter').value;
