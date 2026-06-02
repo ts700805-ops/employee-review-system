@@ -18,7 +18,8 @@
     .skill-table { width: 100%; border-collapse: collapse; margin-top: 25px; background: white; }
     .skill-table th, .skill-table td { border: 2px solid #000; padding: 18px; text-align: center; color: #000; font-size: 18px; font-weight: bold; }
     .skill-table th { background: #f8fafc; }
-    .skill-table td:nth-child(1), .skill-table td:nth-child(2) { text-align: left; }
+    /* 設定特定欄位靠左對齊 */
+    .skill-table td:nth-child(1), .skill-table td:nth-child(2), .skill-table td:nth-child(4), .skill-table td:nth-child(5) { text-align: left; }
     .circle-progress { width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 15px auto; background: radial-gradient(closest-side, white 80%, transparent 0 99%, white 0), conic-gradient(#4f46e5 var(--p, 0%), #e2e8f0 0); }
     .eval-card { display: inline-block; width: 220px; background: white; padding: 20px; margin: 15px; border-radius: 15px; text-align: center; border: 2px solid #000; }
   </style>
@@ -26,7 +27,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260602-23</div>
+  <div class="version">版本: 20260602-24</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
