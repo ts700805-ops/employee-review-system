@@ -15,9 +15,10 @@
     .version { font-size: 12px; color: #888; margin-bottom: 20px; }
     hr { margin: 20px 0; border: 0; border-top: 1px solid #eee; }
     .gradient-bg { background: linear-gradient(135deg, #4b0082, #800080, #9932cc); color: white; padding: 30px; border-radius: 15px; }
-    .skill-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border: 1px solid #ddd; }
-    .skill-table th, .skill-table td { border: 1px solid #ddd; padding: 12px; text-align: center; color: #0a3d2e; font-weight: bold; }
-    .skill-table th { background: #f2f2f2; }
+    .skill-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .skill-table th, .skill-table td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+    .skill-table th { background: #0a3d2e; color: white; font-weight: bold; }
+    .skill-table td { background: #1a5e4d; color: white; font-weight: bold; }
     .skill-table td:nth-child(1), .skill-table td:nth-child(2) { text-align: left; }
     .circle-progress { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 10px auto; background: radial-gradient(closest-side, white 80%, transparent 0 99%, white 0), conic-gradient(#4b0082 var(--p, 0%), #ddd 0); }
     .eval-card { display: inline-block; width: 180px; background: white; padding: 15px; margin: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -26,7 +27,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260602-18</div>
+  <div class="version">版本: 20260602-19</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -149,13 +150,12 @@
     document.getElementById('cat').value = data.cat;
     document.getElementById('item').value = data.item;
     document.getElementById('score').value = data.score;
-    alert("已載入，修改文字後點儲存即可，照片若未選取將維持舊圖。");
+    alert("已載入資料至上方，修改文字後點儲存即可，照片若未選取將維持舊圖。");
   };
 
   window.del6S = (unit, key) => { if(confirm('確定刪除?')) remove(ref(db, `6s/${unit}/${key}`)); };
   window.viewImg = (src) => { if(src && src !== 'null') { const win = window.open(); win.document.write(`<img src="${src}" style="max-width:100%">`); } else alert('無照片'); };
 
-  // --- 維持原有功能 ---
   function setupEvalFilter() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const filter = document.getElementById('evalLeaderFilter'); if(filter) filter.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
   window.renderEval = () => { const leader = document.getElementById('evalLeaderFilter').value; const area = document.getElementById('evalArea'); if(!leader) { area.innerHTML = ''; return; } onValue(ref(db, 'teams/' + leader), (s) => { const members = (s.val() || "").split(','); onValue(ref(db, 'evaluations/' + leader), (snapshot) => { const scores = snapshot.val() || {}; let html = `<h3>檢視：【${leader}組】</h3>`; members.forEach(m => { const name = m.trim(); const score = scores[name] || "0%"; const p = score.replace('%', ''); html += `<div class="eval-card"><div>👤 ${name}</div><div class="circle-progress" style="--p:${p}%"><span>${score}</span></div><select id="score_${name}"><option value="0%" ${score=='0%'?'selected':''}>0%</option><option value="20%" ${score=='20%'?'selected':''}>20%</option><option value="40%" ${score=='40%'?'selected':''}>40%</option><option value="60%" ${score=='60%'?'selected':''}>60%</option><option value="80%" ${score=='80%'?'selected':''}>80%</option><option value="100%" ${score=='100%'?'selected':''}>100%</option></select><br><button class="btn" style="margin-top:5px;" onclick="saveScore('${leader}','${name}')">儲存</button></div>`; }); area.innerHTML = html; }); }); };
   window.saveScore = (l, m) => { const val = document.getElementById('score_' + m).value; set(ref(db, `evaluations/${l}/${m}`), val).then(() => alert('已儲存: ' + val)); };
@@ -165,7 +165,7 @@
   window.addTeam = () => { const leader = document.getElementById('ln').value; const members = document.getElementById('ml').value; if(!leader || !members) return alert('請輸入完整資訊'); set(ref(db, 'teams/' + leader), members).then(() => { alert('組別儲存成功'); }); };
   window.addSkill = () => { const l = document.getElementById('sLeaderSelect').value; const m = document.getElementById('sMemberSelect').value; const s = document.getElementById('sName').value; if(!l || !m || !s) { alert('請填寫完整技能資訊'); return; } set(ref(db, `skills/${l}/${m}`), s).then(() => { alert('技能已新增'); }); };
   function renderTeams() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const container = document.getElementById('teamList'); if(!container) return; let html = `<h4>目前人員配置：</h4>`; for (let l in data) { html += `<div style="margin-bottom:10px;"><strong>${l}組：</strong><br><input id="e_team_${l}" value="${data[l]}"> <button class="btn" onclick="saveEditTeam('${l}')">儲存</button></div>`; } container.innerHTML = html; }); }
-  window.saveEditTeam = (l) => { set(ref(db, 'teams/' + l), document.getElementById('e_team_${l}').value).then(() => alert('更新成功')); };
+  window.saveEditTeam = (l) => { set(ref(db, 'teams/' + l), document.getElementById('e_team_' + l).value).then(() => alert('更新成功')); };
   function renderSkillsAdminByLeader(leader) { onValue(ref(db, `skills/${leader}`), (s) => { const data = s.val() || {}; const container = document.getElementById('skillEditArea'); if(!container) return; let html = `<h4>${leader}組 目前技能清單：</h4>`; for (let m in data) { html += `<div style="margin-bottom:10px;"><strong>${m}：</strong><br><input id="e_skill_${leader}_${m}" value="${data[m]}"> <button class="btn" onclick="saveEditSkill('${leader}','${m}')">儲存</button></div>`; } container.innerHTML = html; }); }
   window.saveEditSkill = (l, m) => { set(ref(db, `skills/${l}/${m}`), document.getElementById(`e_skill_${l}_${m}`).value).then(() => alert('更新成功')); };
   function setupLeaderFilter() { onValue(ref(db, 'teams'), (s) => { const data = s.val() || {}; const filter = document.getElementById('leaderFilter'); if(filter) filter.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
