@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V32</title>
+  <title>員工評核系統 - V33</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 22px; font-weight: bold; }
     nav { width: 240px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; }
@@ -18,8 +18,6 @@
     .skill-table th, .skill-table td { border: 2px solid #000; padding: 15px; text-align: left; color: #000; }
     .skill-table th { background: #f1f5f9; text-align: center; }
     .gradient-bg { background: linear-gradient(135deg, #e9d5ff, #f5d0fe); color: #000; padding: 40px; border-radius: 20px; border: 3px solid #a855f7; }
-    
-    /* 圓形百分比恢復 */
     .eval-card { display: inline-block; width: 220px; text-align: center; padding: 20px; border: 3px solid #000; border-radius: 15px; margin: 10px; background: white; }
     .circle-progress { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 15px auto; 
       border: 10px solid #22c55e; font-size: 28px; color: #000; font-weight: 900; }
@@ -28,7 +26,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260603-32</div>
+  <div class="version">版本: 20260603-33</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -49,16 +47,7 @@
   }));
 
   window.currentEditData = null;
-  
-  // 35. 分類色系區分
-  const categoryColors = { 
-    "整理": "#fee2e2", // Light Red
-    "整頓": "#fef9c3", // Light Yellow
-    "清潔": "#dcfce7", // Light Green
-    "清掃": "#dbeafe", // Light Blue
-    "素養": "#f3e8ff", // Light Purple
-    "安全": "#ffedd5"  // Light Orange
-  };
+  const categoryColors = { "整理": "#fee2e2", "整頓": "#fef9c3", "清潔": "#dcfce7", "清掃": "#dbeafe", "素養": "#f3e8ff", "安全": "#ffedd5" };
   const getColor = (cat) => categoryColors[cat] || "#f1f5f9";
 
   window.showPage = (page) => {
@@ -93,10 +82,10 @@
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const scale = Math.min(600 / img.width, 1);
+        const scale = Math.min(800 / img.width, 1); // 提高一點解析度
         canvas.width = img.width * scale; canvas.height = img.height * scale;
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        callback(canvas.toDataURL('image/jpeg', 0.4));
+        callback(canvas.toDataURL('image/jpeg', 0.6));
       };
       img.src = e.target.result;
     };
@@ -109,7 +98,6 @@
     const listDiv = document.getElementById('sixSList');
     if(!unit) return;
     
-    // Top: Table List
     onValue(ref(db, `6s/${unit}`), (s) => {
       const data = s.val() || {};
       let html = `<table class="skill-table"><tr><th>分類</th><th>項目</th><th>分數</th><th>現況說明</th><th>改善方式</th><th>善前</th><th>善後</th><th>操作</th></tr>`;
@@ -118,8 +106,8 @@
         total += parseInt(data[key].score) || 0;
         const color = getColor(data[key].cat);
         html += `<tr style="background:${color};"><td>${data[key].cat}</td><td style="text-align:left;">${data[key].item}</td><td>${data[key].score}</td><td style="text-align:left;">${data[key].note}</td><td style="text-align:left;">${data[key].improve}</td>
-          <td>${data[key].before ? `<button class="btn-action" style="background:#f0abfc; border-color:#d946ef" onclick="viewImg('${data[key].before}')">📷查看</button>` : '無'}</td>
-          <td>${data[key].after ? `<button class="btn-action" style="background:#7dd3fc; border-color:#0ea5e9" onclick="viewImg('${data[key].after}')">📷查看</button>` : '無'}</td>
+          <td>${data[key].before ? `<button class="btn-action" style="background:#f0abfc" onclick="viewImg('${data[key].before}')">📷查看</button>` : '無'}</td>
+          <td>${data[key].after ? `<button class="btn-action" style="background:#7dd3fc" onclick="viewImg('${data[key].after}')">📷查看</button>` : '無'}</td>
           <td><button class="btn-action" onclick="edit6S('${key}',${JSON.stringify(data[key]).replace(/"/g, '&quot;')})">編輯</button>
               <button class="btn-action" style="background:#fca5a5" onclick="del6S('${unit}','${key}')">刪除</button></td></tr>`;
       }
@@ -127,15 +115,11 @@
       listDiv.innerHTML = html;
     });
 
-    // Bottom: Edit Area
     container.innerHTML = `<div class="card" style="border-color:#ef4444"><h3>資料編輯 / 新增 (${unit})</h3>
-      <input type="text" id="cat" placeholder="分類 (例如: 整理)">
-      <input type="text" id="item" placeholder="確認項目">
-      <input type="number" id="score" placeholder="評分">
-      <textarea id="note" placeholder="現況說明"></textarea>
-      <textarea id="improve" placeholder="改善方式"></textarea>
-      <div style="margin:10px 0;">善前照片: <input type="file" id="beforeImg" accept="image/*" style="width:auto; border:none;"></div>
-      <div style="margin:10px 0;">善後照片: <input type="file" id="afterImg" accept="image/*" style="width:auto; border:none;"></div>
+      <input type="text" id="cat" placeholder="分類"> <input type="text" id="item" placeholder="確認項目"> <input type="number" id="score" placeholder="評分">
+      <textarea id="note" placeholder="現況說明"></textarea> <textarea id="improve" placeholder="改善方式"></textarea>
+      <div style="margin:10px 0;">善前照片: <input type="file" id="beforeImg" accept="image/*"></div>
+      <div style="margin:10px 0;">善後照片: <input type="file" id="afterImg" accept="image/*"></div>
       <button class="btn" style="background:#ef4444" onclick="save6S('${unit}')">儲存變更</button></div>`;
   };
 
@@ -152,7 +136,6 @@
       compressImg(document.getElementById('afterImg').files[0], (b64a) => {
         set(ref(db, `6s/${unit}/${key}`), { cat, item, score, note, improve, before: b64b || oldB, after: b64a || oldA });
         window.currentEditData = null; alert('儲存成功！');
-        ['cat','item','score','note','improve'].forEach(id => document.getElementById(id).value = '');
       });
     });
   };
@@ -167,10 +150,15 @@
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
 
-  window.del6S = (unit, key) => { if(confirm('確定要刪除這筆紀錄嗎?')) remove(ref(db, `6s/${unit}/${key}`)); };
-  window.viewImg = (src) => { const win = window.open(); win.document.write(`<img src="${src}" style="width:100%">`); };
+  window.del6S = (unit, key) => { if(confirm('確定刪除?')) remove(ref(db, `6s/${unit}/${key}`)); };
+  
+  // 38. 修正圖片彈出顯示，不限制寬度與高度，顯示更清晰
+  window.viewImg = (src) => { 
+    const win = window.open("", "_blank", "width=800,height=600"); 
+    win.document.write(`<div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#000;">
+      <img src="${src}" style="max-width:100%; max-height:100%; object-fit:contain;"></div>`); 
+  };
 
-  // --- Assessment Logic ---
   function setupEvalFilter() { onValue(ref(db, 'teams'), (s) => { const filter = document.getElementById('evalLeaderFilter'); filter.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(s.val() || {}).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
   window.renderEval = () => {
     const leader = document.getElementById('evalLeaderFilter').value;
@@ -192,7 +180,6 @@
   };
   window.saveScore = (l, m) => set(ref(db, `evaluations/${l}/${m}`), document.getElementById('s_'+m).value).then(() => alert('評核已儲存成功！'));
 
-  // --- Admin Logic ---
   function loadLeaders() { onValue(ref(db, 'teams'), (s) => { document.getElementById('sLeaderSelect').innerHTML = '<option value="">選擇組長</option>' + Object.keys(s.val() || {}).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
   window.updateMemberSelect = () => {
     const leader = document.getElementById('sLeaderSelect').value;
@@ -203,15 +190,8 @@
   window.addTeam = () => set(ref(db, 'teams/' + document.getElementById('ln').value), document.getElementById('ml').value).then(() => alert('組別已新增成功！'));
   window.addSkill = () => set(ref(db, `skills/${document.getElementById('sLeaderSelect').value}/${document.getElementById('sMemberSelect').value}`), document.getElementById('sName').value).then(() => alert('技能已新增成功！'));
   
-  // 37. 修復後台儲存按鈕
-  window.saveAdminTeam = (l) => {
-    const val = document.getElementById('e_'+l).value;
-    set(ref(db, `teams/${l}`), val).then(() => alert(`[${l}組] 員工配置已修改成功！`));
-  };
-  window.saveAdminSkill = (leader, member) => {
-    const val = document.getElementById(`es_${member}`).value;
-    set(ref(db, `skills/${leader}/${member}`), val).then(() => alert(`[${member}] 技能設定已修改成功！`));
-  };
+  window.saveAdminTeam = (l) => { const val = document.getElementById('e_'+l).value; set(ref(db, `teams/${l}`), val).then(() => alert(`[${l}組] 員工配置已修改成功！`)); };
+  window.saveAdminSkill = (leader, member) => { const val = document.getElementById(`es_${member}`).value; set(ref(db, `skills/${leader}/${member}`), val).then(() => alert(`[${member}] 技能設定已修改成功！`)); };
 
   function renderTeams() { 
     onValue(ref(db, 'teams'), (s) => { 
