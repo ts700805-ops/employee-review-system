@@ -168,14 +168,14 @@
     renderSkillsAdminByLeader(leader);
   };
   window.uploadPhoto = () => { const f = document.getElementById('photoInput').files[0]; const r = new FileReader(); r.onload = e => set(ref(db, 'homepage/photo'), e.target.result); r.readAsDataURL(f); };
-  window.addTeam = () => set(ref(db, 'teams/' + document.getElementById('ln').value), document.getElementById('ml').value);
-  window.addSkill = () => set(ref(db, `skills/${document.getElementById('sLeaderSelect').value}/${document.getElementById('sMemberSelect').value}`), document.getElementById('sName').value);
+  window.addTeam = () => set(ref(db, 'teams/' + document.getElementById('ln').value), document.getElementById('ml').value).then(() => alert('已儲存成功！'));
+  window.addSkill = () => set(ref(db, `skills/${document.getElementById('sLeaderSelect').value}/${document.getElementById('sMemberSelect').value}`), document.getElementById('sName').value).then(() => alert('已儲存成功！'));
   
   function renderTeams() { 
     onValue(ref(db, 'teams'), (s) => { 
         let h = '<h4>目前人員配置：</h4>'; 
         for(let l in s.val()||{}) {
-            h += `<div>${l}：<input id="e_${l}" value="${s.val()[l]}"><button onclick="set(ref(db,'teams/${l}'),document.getElementById('e_${l}').value).then(()=>alert('已儲存'))">儲存</button></div>`; 
+            h += `<div>${l}：<input id="e_${l}" value="${s.val()[l]}"><button onclick="set(ref(db,'teams/${l}'),document.getElementById('e_${l}').value).then(()=>alert('已儲存成功！'))">儲存</button></div>`; 
         }
         document.getElementById('teamList').innerHTML = h; 
     }); 
@@ -185,7 +185,7 @@
     onValue(ref(db, `skills/${leader}`), (s) => { 
         let h = `<h4>${leader}技能：</h4>`; 
         for(let m in s.val()||{}) {
-            h += `<div>${m}：<input id="es_${m}" value="${s.val()[m]}"><button onclick="set(ref(db,'skills/${leader}/${m}'),document.getElementById('es_${m}').value).then(()=>alert('已儲存'))">儲存</button></div>`; 
+            h += `<div>${m}：<input id="es_${m}" value="${s.val()[m]}"><button onclick="set(ref(db,'skills/${leader}/${m}'),document.getElementById('es_${m}').value).then(()=>alert('已儲存成功！'))">儲存</button></div>`; 
         }
         document.getElementById('skillEditArea').innerHTML = h; 
     }); 
