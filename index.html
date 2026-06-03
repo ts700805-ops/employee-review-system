@@ -18,7 +18,6 @@
     .skill-table th, .skill-table td { border: 2px solid #000; padding: 15px; text-align: left; color: #000; }
     .skill-table th { background: #f1f5f9; text-align: center; }
     .gradient-bg { background: linear-gradient(135deg, #e9d5ff, #f5d0fe); color: #000; padding: 40px; border-radius: 20px; border: 2px solid #a855f7; }
-    /* 圓形百分比進度樣式 */
     .eval-card { display: inline-block; width: 200px; text-align: center; padding: 20px; border: 2px solid #000; border-radius: 15px; margin: 10px; }
     .circle-progress { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 15px auto; 
       border: 8px solid #22c55e; font-size: 24px; color: #1e293b; font-weight: bold; }
@@ -27,7 +26,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260602-30</div>
+  <div class="version">版本: 20260602-31</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -171,8 +170,27 @@
   window.uploadPhoto = () => { const f = document.getElementById('photoInput').files[0]; const r = new FileReader(); r.onload = e => set(ref(db, 'homepage/photo'), e.target.result); r.readAsDataURL(f); };
   window.addTeam = () => set(ref(db, 'teams/' + document.getElementById('ln').value), document.getElementById('ml').value);
   window.addSkill = () => set(ref(db, `skills/${document.getElementById('sLeaderSelect').value}/${document.getElementById('sMemberSelect').value}`), document.getElementById('sName').value);
-  function renderTeams() { onValue(ref(db, 'teams'), (s) => { let h = '<h4>目前人員配置：</h4>'; for(let l in s.val()||{}) h += `<div>${l}：<input id="e_${l}" value="${s.val()[l]}"><button onclick="set(ref(db,'teams/${l}'),document.getElementById('e_${l}').value)">儲存</button></div>`; document.getElementById('teamList').innerHTML = h; }); }
-  function renderSkillsAdminByLeader(leader) { onValue(ref(db, `skills/${leader}`), (s) => { let h = `<h4>${leader}技能：</h4>`; for(let m in s.val()||{}) h += `<div>${m}：<input id="es_${m}" value="${s.val()[m]}"><button onclick="set(ref(db,'skills/${leader}/${m}'),document.getElementById('es_${m}'),value)">儲存</button></div>`; document.getElementById('skillEditArea').innerHTML = h; }); }
+  
+  function renderTeams() { 
+    onValue(ref(db, 'teams'), (s) => { 
+        let h = '<h4>目前人員配置：</h4>'; 
+        for(let l in s.val()||{}) {
+            h += `<div>${l}：<input id="e_${l}" value="${s.val()[l]}"><button onclick="set(ref(db,'teams/${l}'),document.getElementById('e_${l}').value).then(()=>alert('已儲存'))">儲存</button></div>`; 
+        }
+        document.getElementById('teamList').innerHTML = h; 
+    }); 
+  }
+  
+  function renderSkillsAdminByLeader(leader) { 
+    onValue(ref(db, `skills/${leader}`), (s) => { 
+        let h = `<h4>${leader}技能：</h4>`; 
+        for(let m in s.val()||{}) {
+            h += `<div>${m}：<input id="es_${m}" value="${s.val()[m]}"><button onclick="set(ref(db,'skills/${leader}/${m}'),document.getElementById('es_${m}').value).then(()=>alert('已儲存'))">儲存</button></div>`; 
+        }
+        document.getElementById('skillEditArea').innerHTML = h; 
+    }); 
+  }
+  
   function setupLeaderFilter() { onValue(ref(db, 'teams'), (s) => { document.getElementById('leaderFilter').innerHTML = '<option value="">請選擇組長</option>' + Object.keys(s.val()||{}).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
   window.renderSkills = () => {
     const leader = document.getElementById('leaderFilter').value;
