@@ -2,31 +2,33 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統</title>
+  <title>員工評核系統 - V32</title>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 20px; font-weight: bold; }
-    nav { width: 240px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; }
+    body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 22px; font-weight: bold; }
+    nav { width: 240px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; }
     nav div { padding: 18px; cursor: pointer; border-bottom: 1px solid #cbd5e1; font-weight: bold; }
     nav div:hover { background: #cbd5e1; }
-    main { flex: 1; padding: 40px; }
-    .card { background: white; padding: 30px; border-radius: 15px; margin-bottom: 25px; border: 2px solid #000; }
-    .btn { padding: 12px 24px; cursor: pointer; background: #4f46e5; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; }
-    .btn-action { padding: 8px 12px; margin: 2px; cursor: pointer; border-radius: 5px; border: 1px solid #000; }
-    input, select, textarea { padding: 12px; margin: 8px 0; border: 2px solid #000; border-radius: 8px; width: 100%; font-size: 18px; font-weight: bold; }
+    main { flex: 1; padding: 40px; margin-left: 240px; }
+    .card { background: white; padding: 30px; border-radius: 15px; margin-bottom: 25px; border: 3px solid #000; }
+    .btn { padding: 12px 24px; cursor: pointer; background: #4f46e5; color: white; border: 2px solid #000; border-radius: 8px; font-weight: bold; font-size: 20px; }
+    .btn-action { padding: 8px 12px; margin: 2px; cursor: pointer; border-radius: 5px; border: 2px solid #000; font-weight: bold; }
+    input, select, textarea { padding: 12px; margin: 8px 0; border: 3px solid #000; border-radius: 8px; width: 100%; font-size: 20px; font-weight: bold; color: #000; }
     .version { font-size: 16px; color: #475569; margin-bottom: 20px; }
-    .skill-table { width: 100%; border-collapse: collapse; margin-top: 25px; background: white; }
+    .skill-table { width: 100%; border-collapse: collapse; margin-top: 25px; background: white; border: 3px solid #000; }
     .skill-table th, .skill-table td { border: 2px solid #000; padding: 15px; text-align: left; color: #000; }
     .skill-table th { background: #f1f5f9; text-align: center; }
-    .gradient-bg { background: linear-gradient(135deg, #e9d5ff, #f5d0fe); color: #000; padding: 40px; border-radius: 20px; border: 2px solid #a855f7; }
-    .eval-card { display: inline-block; width: 200px; text-align: center; padding: 20px; border: 2px solid #000; border-radius: 15px; margin: 10px; }
+    .gradient-bg { background: linear-gradient(135deg, #e9d5ff, #f5d0fe); color: #000; padding: 40px; border-radius: 20px; border: 3px solid #a855f7; }
+    
+    /* 圓形百分比恢復 */
+    .eval-card { display: inline-block; width: 220px; text-align: center; padding: 20px; border: 3px solid #000; border-radius: 15px; margin: 10px; background: white; }
     .circle-progress { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 15px auto; 
-      border: 8px solid #22c55e; font-size: 24px; color: #1e293b; font-weight: bold; }
+      border: 10px solid #22c55e; font-size: 28px; color: #000; font-weight: 900; }
   </style>
 </head>
 <body>
 
 <nav>
-  <div class="version">版本: 20260602-32</div>
+  <div class="version">版本: 20260603-32</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -47,7 +49,16 @@
   }));
 
   window.currentEditData = null;
-  const categoryColors = { "整理": "#fecaca", "整頓": "#fef08a", "清潔": "#bbf7d0", "清掃": "#bfdbfe", "素養": "#ddd6fe", "安全": "#fbcfe8" };
+  
+  // 35. 分類色系區分
+  const categoryColors = { 
+    "整理": "#fee2e2", // Light Red
+    "整頓": "#fef9c3", // Light Yellow
+    "清潔": "#dcfce7", // Light Green
+    "清掃": "#dbeafe", // Light Blue
+    "素養": "#f3e8ff", // Light Purple
+    "安全": "#ffedd5"  // Light Orange
+  };
   const getColor = (cat) => categoryColors[cat] || "#f1f5f9";
 
   window.showPage = (page) => {
@@ -63,7 +74,7 @@
       const password = prompt("請輸入管理員密碼:");
       if (password !== "0000") { alert("密碼錯誤！"); return; }
       content.innerHTML = `<div class="card"><h3>📷 照片管理</h3><input type="file" id="photoInput" accept="image/*"><button class="btn" onclick="uploadPhoto()">更新首頁照片</button></div>
-        <div class="card"><h3>👥 員工配置</h3><input type="text" id="ln" placeholder="組長名稱"><input type="text" id="ml" placeholder="組員名稱(逗號分隔)"><button class="btn" onclick="addTeam()">儲存組別</button><hr><div id="teamList"></div></div>
+        <div class="card"><h3>👥 員工配置</h3><input type="text" id="ln" placeholder="組長名稱"><input type="text" id="ml" placeholder="組員名稱(逗號分隔)"><button class="btn" onclick="addTeam()">儲存新組別</button><hr><div id="teamList"></div></div>
         <div class="card"><h3>🛠️ 技能設定</h3><select id="sLeaderSelect" onchange="updateMemberSelect()"><option value="">選擇組長</option></select><select id="sMemberSelect"><option value="">請先選擇組長</option></select><input type="text" id="sName" placeholder="技能名稱(逗號分隔)"><button class="btn" onclick="addSkill()">新增技能</button><hr><div id="skillEditArea"></div></div>`;
       renderTeams(); loadLeaders();
     } else if (page === 'eval') {
@@ -97,49 +108,69 @@
     const container = document.getElementById('sixSContainer');
     const listDiv = document.getElementById('sixSList');
     if(!unit) return;
+    
+    // Top: Table List
     onValue(ref(db, `6s/${unit}`), (s) => {
       const data = s.val() || {};
       let html = `<table class="skill-table"><tr><th>分類</th><th>項目</th><th>分數</th><th>現況說明</th><th>改善方式</th><th>善前</th><th>善後</th><th>操作</th></tr>`;
       let total = 0;
       for(let key in data) {
         total += parseInt(data[key].score) || 0;
-        html += `<tr style="background:${getColor(data[key].cat)};"><td>${data[key].cat}</td><td style="text-align:left;">${data[key].item}</td><td>${data[key].score}</td><td>${data[key].note}</td><td>${data[key].improve}</td>
-          <td>${data[key].before ? `<button class="btn-action" style="background:#f0abfc" onclick="viewImg('${data[key].before}')">📷查看</button>` : '無'}</td>
-          <td>${data[key].after ? `<button class="btn-action" style="background:#7dd3fc" onclick="viewImg('${data[key].after}')">📷查看</button>` : '無'}</td>
+        const color = getColor(data[key].cat);
+        html += `<tr style="background:${color};"><td>${data[key].cat}</td><td style="text-align:left;">${data[key].item}</td><td>${data[key].score}</td><td style="text-align:left;">${data[key].note}</td><td style="text-align:left;">${data[key].improve}</td>
+          <td>${data[key].before ? `<button class="btn-action" style="background:#f0abfc; border-color:#d946ef" onclick="viewImg('${data[key].before}')">📷查看</button>` : '無'}</td>
+          <td>${data[key].after ? `<button class="btn-action" style="background:#7dd3fc; border-color:#0ea5e9" onclick="viewImg('${data[key].after}')">📷查看</button>` : '無'}</td>
           <td><button class="btn-action" onclick="edit6S('${key}',${JSON.stringify(data[key]).replace(/"/g, '&quot;')})">編輯</button>
-              <button class="btn-action" onclick="del6S('${unit}','${key}')">刪除</button></td></tr>`;
+              <button class="btn-action" style="background:#fca5a5" onclick="del6S('${unit}','${key}')">刪除</button></td></tr>`;
       }
-      html += `<tr><td colspan="2"><b>總分</b></td><td><b>${total}</b></td><td colspan="5"></td></tr></table>`;
+      html += `<tr><td colspan="2" style="text-align:center;"><b>總分</b></td><td><b>${total}</b></td><td colspan="5"></td></tr></table>`;
       listDiv.innerHTML = html;
     });
-    container.innerHTML = `<div class="card"><h3>新增/編輯 ${unit} 資料</h3>
-      <input type="text" id="cat" placeholder="分類"> <input type="text" id="item" placeholder="確認項目"> <input type="number" id="score" placeholder="評分">
-      <textarea id="note" placeholder="現況說明"></textarea> <textarea id="improve" placeholder="改善方式"></textarea>
-      <div>善前照片:<input type="file" id="beforeImg" accept="image/*"></div> <div>善後照片:<input type="file" id="afterImg" accept="image/*"></div>
-      <button class="btn" onclick="save6S('${unit}')">儲存紀錄</button></div>`;
+
+    // Bottom: Edit Area
+    container.innerHTML = `<div class="card" style="border-color:#ef4444"><h3>資料編輯 / 新增 (${unit})</h3>
+      <input type="text" id="cat" placeholder="分類 (例如: 整理)">
+      <input type="text" id="item" placeholder="確認項目">
+      <input type="number" id="score" placeholder="評分">
+      <textarea id="note" placeholder="現況說明"></textarea>
+      <textarea id="improve" placeholder="改善方式"></textarea>
+      <div style="margin:10px 0;">善前照片: <input type="file" id="beforeImg" accept="image/*" style="width:auto; border:none;"></div>
+      <div style="margin:10px 0;">善後照片: <input type="file" id="afterImg" accept="image/*" style="width:auto; border:none;"></div>
+      <button class="btn" style="background:#ef4444" onclick="save6S('${unit}')">儲存變更</button></div>`;
   };
 
   window.save6S = (unit) => {
+    const cat = document.getElementById('cat').value;
+    const item = document.getElementById('item').value;
+    const score = document.getElementById('score').value;
+    const note = document.getElementById('note').value;
+    const improve = document.getElementById('improve').value;
     const key = window.currentEditData ? window.currentEditData.key : Date.now();
     const oldB = window.currentEditData ? window.currentEditData.before : "";
     const oldA = window.currentEditData ? window.currentEditData.after : "";
     compressImg(document.getElementById('beforeImg').files[0], (b64b) => {
       compressImg(document.getElementById('afterImg').files[0], (b64a) => {
-        set(ref(db, `6s/${unit}/${key}`), { cat: document.getElementById('cat').value, item: document.getElementById('item').value, score: document.getElementById('score').value, note: document.getElementById('note').value, improve: document.getElementById('improve').value, before: b64b || oldB, after: b64a || oldA });
-        window.currentEditData = null; alert('儲存完成');
+        set(ref(db, `6s/${unit}/${key}`), { cat, item, score, note, improve, before: b64b || oldB, after: b64a || oldA });
+        window.currentEditData = null; alert('儲存成功！');
+        ['cat','item','score','note','improve'].forEach(id => document.getElementById(id).value = '');
       });
     });
   };
 
   window.edit6S = (k, data) => {
     window.currentEditData = {key: k, ...data};
-    document.getElementById('cat').value = data.cat; document.getElementById('item').value = data.item;
-    document.getElementById('score').value = data.score; document.getElementById('note').value = data.note; document.getElementById('improve').value = data.improve;
+    document.getElementById('cat').value = data.cat;
+    document.getElementById('item').value = data.item;
+    document.getElementById('score').value = data.score;
+    document.getElementById('note').value = data.note;
+    document.getElementById('improve').value = data.improve;
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
 
-  window.del6S = (unit, key) => { if(confirm('確定刪除?')) remove(ref(db, `6s/${unit}/${key}`)); };
+  window.del6S = (unit, key) => { if(confirm('確定要刪除這筆紀錄嗎?')) remove(ref(db, `6s/${unit}/${key}`)); };
   window.viewImg = (src) => { const win = window.open(); win.document.write(`<img src="${src}" style="width:100%">`); };
 
+  // --- Assessment Logic ---
   function setupEvalFilter() { onValue(ref(db, 'teams'), (s) => { const filter = document.getElementById('evalLeaderFilter'); filter.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(s.val() || {}).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
   window.renderEval = () => {
     const leader = document.getElementById('evalLeaderFilter').value;
@@ -148,34 +179,45 @@
       const members = (s.val() || "").split(',');
       onValue(ref(db, 'evaluations/' + leader), (snap) => {
         const scores = snap.val() || {};
-        let html = `<h3>${leader}組成員：</h3>`;
+        let html = `<h3>${leader}組成員評核：</h3>`;
         members.forEach(m => {
           const score = scores[m.trim()] || "0%";
           html += `<div class="eval-card"><div>👤 ${m.trim()}</div><div class="circle-progress"><span>${score}</span></div>
             <select id="s_${m.trim()}">${['0%','20%','40%','60%','80%','100%'].map(v=>`<option value="${v}" ${score==v?'selected':''}>${v}</option>`).join('')}</select>
-            <button class="btn" onclick="saveScore('${leader}','${m.trim()}')">儲存</button></div>`;
+            <button class="btn" style="margin-top:10px;" onclick="saveScore('${leader}','${m.trim()}')">儲存歷史</button></div>`;
         });
         document.getElementById('evalArea').innerHTML = html;
       });
     });
   };
-  window.saveScore = (l, m) => set(ref(db, `evaluations/${l}/${m}`), document.getElementById('s_'+m).value).then(() => alert('已儲存'));
+  window.saveScore = (l, m) => set(ref(db, `evaluations/${l}/${m}`), document.getElementById('s_'+m).value).then(() => alert('評核已儲存成功！'));
 
+  // --- Admin Logic ---
   function loadLeaders() { onValue(ref(db, 'teams'), (s) => { document.getElementById('sLeaderSelect').innerHTML = '<option value="">選擇組長</option>' + Object.keys(s.val() || {}).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
   window.updateMemberSelect = () => {
     const leader = document.getElementById('sLeaderSelect').value;
     onValue(ref(db, 'teams/' + leader), (s) => { document.getElementById('sMemberSelect').innerHTML = (s.val()||"").split(',').map(m=>`<option value="${m.trim()}">${m.trim()}</option>`).join(''); });
     renderSkillsAdminByLeader(leader);
   };
-  window.uploadPhoto = () => { const f = document.getElementById('photoInput').files[0]; const r = new FileReader(); r.onload = e => set(ref(db, 'homepage/photo'), e.target.result); r.readAsDataURL(f); };
-  window.addTeam = () => set(ref(db, 'teams/' + document.getElementById('ln').value), document.getElementById('ml').value).then(() => alert('已儲存成功！'));
-  window.addSkill = () => set(ref(db, `skills/${document.getElementById('sLeaderSelect').value}/${document.getElementById('sMemberSelect').value}`), document.getElementById('sName').value).then(() => alert('已儲存成功！'));
+  window.uploadPhoto = () => { const f = document.getElementById('photoInput').files[0]; const r = new FileReader(); r.onload = e => set(ref(db, 'homepage/photo'), e.target.result).then(() => alert('首頁照片更新成功！')); r.readAsDataURL(f); };
+  window.addTeam = () => set(ref(db, 'teams/' + document.getElementById('ln').value), document.getElementById('ml').value).then(() => alert('組別已新增成功！'));
+  window.addSkill = () => set(ref(db, `skills/${document.getElementById('sLeaderSelect').value}/${document.getElementById('sMemberSelect').value}`), document.getElementById('sName').value).then(() => alert('技能已新增成功！'));
   
+  // 37. 修復後台儲存按鈕
+  window.saveAdminTeam = (l) => {
+    const val = document.getElementById('e_'+l).value;
+    set(ref(db, `teams/${l}`), val).then(() => alert(`[${l}組] 員工配置已修改成功！`));
+  };
+  window.saveAdminSkill = (leader, member) => {
+    const val = document.getElementById(`es_${member}`).value;
+    set(ref(db, `skills/${leader}/${member}`), val).then(() => alert(`[${member}] 技能設定已修改成功！`));
+  };
+
   function renderTeams() { 
     onValue(ref(db, 'teams'), (s) => { 
         let h = '<h4>目前人員配置：</h4>'; 
         for(let l in s.val()||{}) {
-            h += `<div>${l}：<input id="e_${l}" value="${s.val()[l]}"><button onclick="set(ref(db,'teams/${l}'),document.getElementById('e_${l}').value).then(()=>alert('已儲存成功！'))">儲存</button></div>`; 
+            h += `<div style="margin-bottom:15px; border-bottom:1px solid #ddd; padding-bottom:10px;"><b>${l}組：</b><input id="e_${l}" value="${s.val()[l]}"><button class="btn-action" onclick="saveAdminTeam('${l}')">儲存修改</button></div>`; 
         }
         document.getElementById('teamList').innerHTML = h; 
     }); 
@@ -183,9 +225,9 @@
   
   function renderSkillsAdminByLeader(leader) { 
     onValue(ref(db, `skills/${leader}`), (s) => { 
-        let h = `<h4>${leader}技能：</h4>`; 
+        let h = `<h4>${leader}組 技能清單：</h4>`; 
         for(let m in s.val()||{}) {
-            h += `<div>${m}：<input id="es_${m}" value="${s.val()[m]}"><button onclick="set(ref(db,'skills/${leader}/${m}'),document.getElementById('es_${m}').value).then(()=>alert('已儲存成功！'))">儲存</button></div>`; 
+            h += `<div style="margin-bottom:15px; border-bottom:1px solid #ddd; padding-bottom:10px;"><b>${m}：</b><input id="es_${m}" value="${s.val()[m]}"><button class="btn-action" onclick="saveAdminSkill('${leader}','${m}')">儲存修改</button></div>`; 
         }
         document.getElementById('skillEditArea').innerHTML = h; 
     }); 
@@ -197,10 +239,10 @@
     onValue(ref(db, `skills/${leader}`), (s) => {
       const data = s.val() || {};
       let skills = new Set(); Object.values(data).forEach(v => v.split(',').forEach(sk => skills.add(sk.trim())));
-      let h = `<table class="skill-table"><tr><th>組員</th>` + Array.from(skills).map(sk => `<th>${sk}</th>`).join('') + `<th>總計</th></tr>`;
+      let h = `<table class="skill-table"><tr><th>組員</th>` + Array.from(skills).map(sk => `<th>${sk}</th>`).join('') + `<th>總計(V)</th></tr>`;
       for(let m in data) {
         let count = 0;
-        h += `<tr><td>${m}</td>` + Array.from(skills).map(sk => { if(data[m].includes(sk)){ count++; return '<td>✓</td>'; } return '<td></td>'; }).join('') + `<td>${count}</td></tr>`;
+        h += `<tr><td>${m}</td>` + Array.from(skills).map(sk => { if(data[m].includes(sk)){ count++; return '<td style="text-align:center;">✓</td>'; } return '<td></td>'; }).join('') + `<td style="text-align:center; background:#f0f9ff;">${count}</td></tr>`;
       }
       document.getElementById('skillTable').innerHTML = h + '</table>';
     });
