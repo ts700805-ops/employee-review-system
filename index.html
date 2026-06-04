@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V36</title>
+  <title>員工評核系統 - V37</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 24px; font-weight: bold; }
     nav { width: 260px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; }
@@ -41,7 +41,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260604-36</div>
+  <div class="version">版本: 20260604-37</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -137,6 +137,19 @@
     reader.readAsDataURL(file);
   };
 
+  // 41. 新增即時重新計算總分的功能，不需要讀取資料庫就能反應
+  window.recalcTotal = () => {
+    const scoreInputs = document.querySelectorAll('.inline-score-field');
+    let total = 0;
+    scoreInputs.forEach(input => {
+      total += parseInt(input.value) || 0;
+    });
+    const totalDisplay = document.getElementById('6sTotalScoreDisplay');
+    if (totalDisplay) {
+      totalDisplay.innerText = total;
+    }
+  };
+
   window.render6S = () => {
     const unit = document.getElementById('unitSelect').value;
     const container = document.getElementById('sixSContainer');
@@ -178,7 +191,7 @@
         const beforeBtnClass = itemData.before ? "btn-action btn-has-photo" : "btn-action";
         const afterBtnClass = itemData.after ? "btn-action btn-has-photo" : "btn-action";
 
-        // 40. 把格子內容包成可以直改的 input / textarea
+        // 41. 在分數欄位中加入 class="inline-score-field" 以及 oninput="recalcTotal()" 觸發即時計算
         html += `<tr style="background:${color};">
           <td>
             <input type="text" id="inline_cat_${key}" class="table-input" value="${itemData.cat || ''}" style="text-align:center;">
@@ -187,7 +200,7 @@
             <input type="text" id="inline_item_${key}" class="table-input" style="text-align:left;" value="${itemData.item || ''}">
           </td>
           <td>
-            <input type="number" id="inline_score_${key}" class="table-input" style="text-align:center;" value="${itemData.score || '0'}">
+            <input type="number" id="inline_score_${key}" class="table-input inline-score-field" style="text-align:center;" value="${itemData.score || '0'}" oninput="recalcTotal()">
           </td>
           <td>
             <textarea id="inline_note_${key}" class="table-input" rows="2" style="text-align:left; resize:vertical;">${itemData.note || ''}</textarea>
@@ -210,7 +223,8 @@
         </tr>`;
       });
       
-      html += `<tr><td colspan="2" style="text-align:center;"><b>總分計</b></td><td style="text-align:center;"><b>${total}</b></td><td colspan="5"></td></tr></table>`;
+      // 41. 為總分的數字加上 id="6sTotalScoreDisplay" 方便 JavaScript 動態捕捉修改
+      html += `<tr><td colspan="2" style="text-align:center;"><b>總分計</b></td><td style="text-align:center;"><b id="6sTotalScoreDisplay">${total}</b></td><td colspan="5"></td></tr></table>`;
       listDiv.innerHTML = html;
     });
 
