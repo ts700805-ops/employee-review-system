@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V34</title>
+  <title>員工評核系統 - V35</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 24px; font-weight: bold; }
     nav { width: 260px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; }
@@ -37,7 +37,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260604-34</div>
+  <div class="version">版本: 20260604-35</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -58,7 +58,7 @@
   }));
 
   window.currentEditData = null;
-  // 35. 調整分類底色，將整理(粉紅)與整頓(亮黃)改成不同色系方便觀看
+  // 35. 調整分類底色，將整理(粉紅)與整頓(亮藍)改成不同色系方便觀看
   const categoryColors = { "整理": "#ffdee2", "整頓": "#e0f2fe", "清潔": "#dcfce7", "清掃": "#fff7ed", "素養": "#f3e8ff", "安全": "#fee2e2" };
   const getColor = (cat) => categoryColors[cat] || "#ffffff";
 
@@ -110,10 +110,10 @@
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const scale = Math.min(1024 / img.width, 1); // 38. 提高解析度至1024寬度，品質拉高
+        const scale = Math.min(1024 / img.width, 1); // 38. 提高解析度
         canvas.width = img.width * scale; canvas.height = img.height * scale;
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        callback(canvas.toDataURL('image/jpeg', 0.85)); // 提升至0.85清晰度
+        callback(canvas.toDataURL('image/jpeg', 0.85));
       };
       img.src = e.target.result;
     };
@@ -127,31 +127,43 @@
     if(!unit) { listDiv.innerHTML = ''; container.innerHTML = ''; return; }
     
     onValue(ref(db, `6s/${unit}`), (s) => {
-      const data = s.val() || {};
+      const rawData = s.val() || {};
+      
+      // 40. 將原始物件資料轉換為陣列，並依據分類 (cat) 進行中文字串排序擺放
+      let dataArray = [];
+      for(let key in rawData) {
+        dataArray.push({ key: key, ...rawData[key] });
+      }
+      dataArray.sort((a, b) => String(a.cat || '').localeCompare(String(b.cat || ''), 'zh-TW'));
+
       // 34. 編輯與表格資料上下顛倒：這裡最上方放表格資料
       let html = `<table class="skill-table"><tr><th>分類</th><th style="text-align:left;">項目</th><th>分數</th><th style="text-align:left;">現況說明</th><th style="text-align:left;">改善方式</th><th>善前</th><th>善後</th><th>操作</th></tr>`;
       let total = 0;
-      for(let key in data) {
-        total += parseInt(data[key].score) || 0;
-        const color = getColor(data[key].cat);
+      
+      // 依據排序後的陣列渲染畫面
+      dataArray.forEach((itemData) => {
+        total += parseInt(itemData.score) || 0;
+        const color = getColor(itemData.cat);
+        const key = itemData.key;
         
         // 33. 設計有照片的查看按鈕樣式不一樣
-        const beforeBtnClass = data[key].before ? "btn-action btn-has-photo" : "btn-action";
-        const afterBtnClass = data[key].after ? "btn-action btn-has-photo" : "btn-action";
+        const beforeBtnClass = itemData.before ? "btn-action btn-has-photo" : "btn-action";
+        const afterBtnClass = itemData.after ? "btn-action btn-has-photo" : "btn-action";
 
         html += `<tr style="background:${color};">
-          <td>${data[key].cat}</td>
-          <td style="text-align:left;">${data[key].item}</td>
-          <td style="text-align:center;">${data[key].score}</td>
-          <td style="text-align:left;">${data[key].note || ''}</td>
-          <td style="text-align:left;">${data[key].improve || ''}</td>
-          <td style="text-align:center;">${data[key].before ? `<button class="${beforeBtnClass}" style="background:#f0abfc" onclick="viewImg('${data[key].before}')">📷查看(圖)</button>` : '無'}</td>
-          <td style="text-align:center;">${data[key].after ? `<button class="${afterBtnClass}" style="background:#7dd3fc" onclick="viewImg('${data[key].after}')">📷查看(圖)</button>` : '無'}</td>
+          <td>${itemData.cat}</td>
+          <td style="text-align:left;">${itemData.item}</td>
+          <td style="text-align:center;">${itemData.score}</td>
+          <td style="text-align:left;">${itemData.note || ''}</td>
+          <td style="text-align:left;">${itemData.improve || ''}</td>
+          <td style="text-align:center;">${itemData.before ? `<button class="${beforeBtnClass}" style="background:#f0abfc" onclick="viewImg('${itemData.before}')">📷查看(圖)</button>` : '無'}</td>
+          <td style="text-align:center;">${itemData.after ? `<button class="${afterBtnClass}" style="background:#7dd3fc" onclick="viewImg('${itemData.after}')">📷查看(圖)</button>` : '無'}</td>
           <td style="text-align:center;">
-            <button class="btn-action" style="background:#fef08a" onclick="edit6S('${key}',${JSON.stringify(data[key]).replace(/"/g, '&quot;')})">編輯</button>
+            <button class="btn-action" style="background:#fef08a" onclick="edit6S('${key}',${JSON.stringify(itemData).replace(/"/g, '&quot;')})">編輯</button>
             <button class="btn-action" style="background:#fca5a5" onclick="del6S('${unit}','${key}')">刪除</button>
           </td></tr>`;
-      }
+      });
+      
       html += `<tr><td colspan="2" style="text-align:center;"><b>總分計</b></td><td style="text-align:center;"><b>${total}</b></td><td colspan="5"></td></tr></table>`;
       listDiv.innerHTML = html;
     });
@@ -190,7 +202,7 @@
           after: b64a || oldA || "" 
         }).then(() => {
           window.currentEditData = null; 
-          alert('🎉 修改暨儲存成功！資料已同步雲端！');
+          alert('🎉 修改暨儲存成功！資料已同步雲端且分類重排！');
           render6S();
         }).catch(err => alert('儲存失敗: ' + err));
       });
@@ -204,7 +216,6 @@
     document.getElementById('score').value = data.score || '';
     document.getElementById('note').value = data.note || '';
     document.getElementById('improve').value = data.improve || '';
-    // 滾動到下方的編輯區
     document.getElementById('sixSContainer').scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -226,23 +237,28 @@
     if(!unit) { alert('請先選擇課別再進行匯出！'); return; }
     
     onValue(ref(db, `6s/${unit}`), (s) => {
-      const data = s.val() || {};
-      if(Object.keys(data).length === 0) { alert('目前無資料可供匯出！'); return; }
+      const rawData = s.val() || {};
+      if(Object.keys(rawData).length === 0) { alert('目前無資料可供匯出！'); return; }
       
-      let csvContent = "\uFEFF"; // 避免 Excel 開啟亂碼 (BOM)
+      // 下載也採取排序擺放邏輯
+      let dataArray = [];
+      for(let key in rawData) { dataArray.push(rawData[key]); }
+      dataArray.sort((a, b) => String(a.cat || '').localeCompare(String(b.cat || ''), 'zh-TW'));
+      
+      let csvContent = "\uFEFF"; 
       csvContent += "課別,分類,確認項目,評分,現況說明,改善方式\n";
       
-      for(let key in data) {
+      dataArray.forEach((rowObj) => {
         let row = [
           unit,
-          data[key].cat || '',
-          data[key].item || '',
-          data[key].score || '0',
-          data[key].note || '',
-          data[key].improve || ''
+          rowObj.cat || '',
+          rowObj.item || '',
+          rowObj.score || '0',
+          rowObj.note || '',
+          rowObj.improve || ''
         ].map(text => `"${String(text).replace(/"/g, '""')}"`).join(",");
         csvContent += row + "\n";
-      }
+      });
       
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
