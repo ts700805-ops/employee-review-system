@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V35</title>
+  <title>員工評核系統 - V36</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 24px; font-weight: bold; }
     nav { width: 260px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; }
@@ -14,9 +14,13 @@
     .btn { padding: 12px 24px; cursor: pointer; background: #4f46e5; color: white; border: 3px solid #000; border-radius: 8px; font-weight: bold; font-size: 22px; }
     .btn-action { padding: 10px 16px; margin: 4px; cursor: pointer; border-radius: 5px; border: 2px solid #000; font-weight: bold; font-size: 18px; color: #000; }
     input, select, textarea { padding: 12px; margin: 8px 0; border: 3px solid #000; border-radius: 8px; width: 100%; font-size: 22px; font-weight: bold; color: #000; background: #fff; box-sizing: border-box; }
+    
+    /* 針對表格內的輸入框做特別優化，讓寬度縮小且文字更黑更粗 */
+    .table-input { font-size: 20px; font-weight: bold; color: #000; background: rgba(255,255,255,0.7); border: 2px solid #000; margin: 0; padding: 6px; width: 100%; }
+    
     .version { font-size: 18px; color: #475569; margin-bottom: 20px; font-weight: bold; }
     .skill-table { width: 100%; border-collapse: collapse; margin-top: 25px; background: white; border: 3px solid #000; font-size: 22px; }
-    .skill-table th, .skill-table td { border: 3px solid #000; padding: 16px; text-align: left; color: #000; font-weight: bold; }
+    .skill-table th, .skill-table td { border: 3px solid #000; padding: 12px; text-align: left; color: #000; font-weight: bold; }
     .skill-table th { background: #cbd5e1; text-align: center; font-size: 24px; }
     .gradient-bg { background: linear-gradient(135deg, #e9d5ff, #f5d0fe); color: #000; padding: 40px; border-radius: 20px; border: 3px solid #a855f7; }
     .eval-card { display: inline-block; width: 240px; text-align: center; padding: 20px; border: 3px solid #000; border-radius: 15px; margin: 10px; background: white; color: #000; }
@@ -37,7 +41,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260604-35</div>
+  <div class="version">版本: 20260604-36</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -58,11 +62,24 @@
   }));
 
   window.currentEditData = null;
-  // 35. 調整分類底色，將整理(粉紅)與整頓(亮藍)改成不同色系方便觀看
-  const categoryColors = { "整理": "#ffdee2", "整頓": "#e0f2fe", "清潔": "#dcfce7", "清掃": "#fff7ed", "素養": "#f3e8ff", "安全": "#fee2e2" };
+  
+  // 35 & 40. 調整與定義分類底色（包含新加入的作法與紀律底色，改亮色系，字體黑）
+  const categoryColors = { 
+    "整理": "#ffdee2", 
+    "整頓": "#e0f2fe", 
+    "清掃": "#fff7ed", 
+    "清潔": "#dcfce7", 
+    "作法": "#fef08a", 
+    "紀律": "#fed7aa",
+    "素養": "#f3e8ff", 
+    "安全": "#fee2e2" 
+  };
   const getColor = (cat) => categoryColors[cat] || "#ffffff";
 
-  // 取得進度條圓圈樣式
+  // 40. 定義嚴格的 6S 排序權重 (由上而下分別為：整理、整頓、清掃、清潔、作法、紀律)
+  const categoryOrder = { "整理": 1, "整頓": 2, "清掃": 3, "清潔": 4, "作法": 5, "紀律": 6, "素養": 7, "安全": 8 };
+  const getSortWeight = (cat) => categoryOrder[cat] || 99;
+
   const getProgressClass = (score) => {
     if (score === "20%") return "circle-progress p-20";
     if (score === "40%") return "circle-progress p-40";
@@ -74,7 +91,7 @@
 
   window.showPage = (page) => {
     const content = document.getElementById('content');
-    window.currentEditData = null; // 切換頁面時清空編輯暫存
+    window.currentEditData = null; 
     
     if (page === 'home') {
       content.innerHTML = `<h1>首頁</h1><img id="displayImg" style="max-width:100%; border: 3px solid #000; background:#ccc;" src="">`;
@@ -110,7 +127,7 @@
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const scale = Math.min(1024 / img.width, 1); // 38. 提高解析度
+        const scale = Math.min(1024 / img.width, 1); 
         canvas.width = img.width * scale; canvas.height = img.height * scale;
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
         callback(canvas.toDataURL('image/jpeg', 0.85));
@@ -129,58 +146,119 @@
     onValue(ref(db, `6s/${unit}`), (s) => {
       const rawData = s.val() || {};
       
-      // 40. 將原始物件資料轉換為陣列，並依據分類 (cat) 進行中文字串排序擺放
+      // 40. 將原始物件轉成陣列
       let dataArray = [];
       for(let key in rawData) {
         dataArray.push({ key: key, ...rawData[key] });
       }
-      dataArray.sort((a, b) => String(a.cat || '').localeCompare(String(b.cat || ''), 'zh-TW'));
+      
+      // 40. 依照您規定的順序：整理、整頓、清掃、清潔、作法、紀律 進行重量級排序
+      dataArray.sort((a, b) => getSortWeight(a.cat) - getSortWeight(b.cat));
 
-      // 34. 編輯與表格資料上下顛倒：這裡最上方放表格資料
-      let html = `<table class="skill-table"><tr><th>分類</th><th style="text-align:left;">項目</th><th>分數</th><th style="text-align:left;">現況說明</th><th style="text-align:left;">改善方式</th><th>善前</th><th>善後</th><th>操作</th></tr>`;
+      // 34. 編輯與表格資料上下顛倒：最上方放表格數據
+      let html = `<table class="skill-table">
+        <tr>
+          <th style="width: 12%;">分類</th>
+          <th style="text-align:left; width: 22%;">項目</th>
+          <th style="width: 8%;">分數</th>
+          <th style="text-align:left; width: 20%;">現況說明</th>
+          <th style="text-align:left; width: 20%;">改善方式</th>
+          <th style="width: 7%;">善前</th>
+          <th style="width: 7%;">善後</th>
+          <th style="width: 14%;">快速操作</th>
+        </tr>`;
       let total = 0;
       
-      // 依據排序後的陣列渲染畫面
+      // 40. 將內容轉為行內直改模式
       dataArray.forEach((itemData) => {
         total += parseInt(itemData.score) || 0;
         const color = getColor(itemData.cat);
         const key = itemData.key;
         
-        // 33. 設計有照片的查看按鈕樣式不一樣
         const beforeBtnClass = itemData.before ? "btn-action btn-has-photo" : "btn-action";
         const afterBtnClass = itemData.after ? "btn-action btn-has-photo" : "btn-action";
 
+        // 40. 把格子內容包成可以直改的 input / textarea
         html += `<tr style="background:${color};">
-          <td>${itemData.cat}</td>
-          <td style="text-align:left;">${itemData.item}</td>
-          <td style="text-align:center;">${itemData.score}</td>
-          <td style="text-align:left;">${itemData.note || ''}</td>
-          <td style="text-align:left;">${itemData.improve || ''}</td>
-          <td style="text-align:center;">${itemData.before ? `<button class="${beforeBtnClass}" style="background:#f0abfc" onclick="viewImg('${itemData.before}')">📷查看(圖)</button>` : '無'}</td>
-          <td style="text-align:center;">${itemData.after ? `<button class="${afterBtnClass}" style="background:#7dd3fc" onclick="viewImg('${itemData.after}')">📷查看(圖)</button>` : '無'}</td>
+          <td>
+            <input type="text" id="inline_cat_${key}" class="table-input" value="${itemData.cat || ''}" style="text-align:center;">
+          </td>
+          <td>
+            <input type="text" id="inline_item_${key}" class="table-input" style="text-align:left;" value="${itemData.item || ''}">
+          </td>
+          <td>
+            <input type="number" id="inline_score_${key}" class="table-input" style="text-align:center;" value="${itemData.score || '0'}">
+          </td>
+          <td>
+            <textarea id="inline_note_${key}" class="table-input" rows="2" style="text-align:left; resize:vertical;">${itemData.note || ''}</textarea>
+          </td>
+          <td>
+            <textarea id="inline_improve_${key}" class="table-input" rows="2" style="text-align:left; resize:vertical;">${itemData.improve || ''}</textarea>
+          </td>
           <td style="text-align:center;">
-            <button class="btn-action" style="background:#fef08a" onclick="edit6S('${key}',${JSON.stringify(itemData).replace(/"/g, '&quot;')})">編輯</button>
-            <button class="btn-action" style="background:#fca5a5" onclick="del6S('${unit}','${key}')">刪除</button>
-          </td></tr>`;
+            ${itemData.before ? `<button class="${beforeBtnClass}" style="background:#f0abfc; padding: 6px;" onclick="viewImg('${itemData.before}')">📷圖</button>` : '無'}
+            <input type="file" id="inline_file_b_${key}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
+          </td>
+          <td style="text-align:center;">
+            ${itemData.after ? `<button class="${afterBtnClass}" style="background:#7dd3fc; padding: 6px;" onclick="viewImg('${itemData.after}')">📷圖</button>` : '無'}
+            <input type="file" id="inline_file_a_${key}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
+          </td>
+          <td style="text-align:center;">
+            <button class="btn-action" style="background:#86efac; font-weight:900;" onclick="saveInline6S('${unit}', '${key}', '${itemData.before || ''}', '${itemData.after || ''}')">💾儲存</button>
+            <button class="btn-action" style="background:#fca5a5;" onclick="del6S('${unit}','${key}')">刪除</button>
+          </td>
+        </tr>`;
       });
       
       html += `<tr><td colspan="2" style="text-align:center;"><b>總分計</b></td><td style="text-align:center;"><b>${total}</b></td><td colspan="5"></td></tr></table>`;
       listDiv.innerHTML = html;
     });
 
-    // 34. 編輯與表格資料上下顛倒：輸入框放在表格下方
-    container.innerHTML = `<div class="card" style="border-color:#ef4444; margin-top:30px;"><h3>資料編輯 / 新增資料區 (${unit})</h3>
-      <input type="text" id="cat" placeholder="分類 (例如: 整理、整頓...)"> 
+    // 34. 編輯與表格資料上下顛倒：新增全新的空白欄位依舊放在下方備用
+    container.innerHTML = `<div class="card" style="border-color:#ef4444; margin-top:30px;"><h3>➕ 新增全新項目 (${unit})</h3>
+      <input type="text" id="cat" placeholder="分類 (例如: 整理、整頓、作法、紀律...)"> 
       <input type="text" id="item" placeholder="確認項目"> 
       <input type="number" id="score" placeholder="評分">
       <textarea id="note" placeholder="現況說明"></textarea> 
       <textarea id="improve" placeholder="改善方式"></textarea>
       <div style="margin:15px 0; font-size:20px;">善前照片: <input type="file" id="beforeImg" accept="image/*"></div>
       <div style="margin:15px 0; font-size:20px;">善後照片: <input type="file" id="afterImg" accept="image/*"></div>
-      <button class="btn" style="background:#ef4444" onclick="save6S('${unit}')">儲存變更紀錄</button></div>`;
+      <button class="btn" style="background:#ef4444" onclick="save6S('${unit}')">新增一筆紀錄</button></div>`;
   };
 
-  // 37. 找回並確保儲存成功會跳出成功效果
+  // 40. 全新實作的行內直接修改並儲存函數
+  window.saveInline6S = (unit, key, existingBefore, existingAfter) => {
+    const cat = document.getElementById(`inline_cat_${key}`).value;
+    const item = document.getElementById(`inline_item_${key}`).value;
+    const score = document.getElementById(`inline_score_${key}`).value;
+    const note = document.getElementById(`inline_note_${key}`).value;
+    const improve = document.getElementById(`inline_improve_${key}`).value;
+    
+    if(!cat || !item) { alert('分類與項目不能留空！'); return; }
+
+    const fileB = document.getElementById(`inline_file_b_${key}`).files[0];
+    const fileA = document.getElementById(`inline_file_a_${key}`).files[0];
+
+    // 處理照片壓縮與非同步上傳邏輯
+    compressImg(fileB, (b64b) => {
+      compressImg(fileA, (b64a) => {
+        set(ref(db, `6s/${unit}/${key}`), {
+          cat: cat,
+          item: item,
+          score: score,
+          note: note,
+          improve: improve,
+          before: b64b || existingBefore || "",
+          after: b64a || existingAfter || ""
+        }).then(() => {
+          alert('🎉 格子內容修改成功！資料已即時發送至雲端並重新排料！');
+          render6S();
+        }).catch(err => alert('儲存失敗: ' + err));
+      });
+    });
+  };
+
+  // 保留傳統新增功能
   window.save6S = (unit) => {
     const cat = document.getElementById('cat').value;
     const item = document.getElementById('item').value;
@@ -189,34 +267,20 @@
     const improve = document.getElementById('improve').value;
     
     if(!cat || !item) { alert('請填寫分類與項目！'); return; }
-
-    const key = window.currentEditData ? window.currentEditData.key : Date.now();
-    const oldB = window.currentEditData ? window.currentEditData.before : "";
-    const oldA = window.currentEditData ? window.currentEditData.after : "";
+    const key = Date.now();
     
     compressImg(document.getElementById('beforeImg').files[0], (b64b) => {
       compressImg(document.getElementById('afterImg').files[0], (b64a) => {
         set(ref(db, `6s/${unit}/${key}`), { 
           cat, item, score, note, improve, 
-          before: b64b || oldB || "", 
-          after: b64a || oldA || "" 
+          before: b64b || "", 
+          after: b64a || "" 
         }).then(() => {
-          window.currentEditData = null; 
-          alert('🎉 修改暨儲存成功！資料已同步雲端且分類重排！');
+          alert('🎉 新項目儲存成功！資料已同步雲端且分類重排！');
           render6S();
         }).catch(err => alert('儲存失敗: ' + err));
       });
     });
-  };
-
-  window.edit6S = (k, data) => {
-    window.currentEditData = {key: k, ...data};
-    document.getElementById('cat').value = data.cat || '';
-    document.getElementById('item').value = data.item || '';
-    document.getElementById('score').value = data.score || '';
-    document.getElementById('note').value = data.note || '';
-    document.getElementById('improve').value = data.improve || '';
-    document.getElementById('sixSContainer').scrollIntoView({ behavior: 'smooth' });
   };
 
   window.del6S = (unit, key) => { 
@@ -231,7 +295,6 @@
       <img src="${src}" style="max-width:95%; max-height:95%; object-fit:contain; border:3px solid #fff;"></div>`); 
   };
 
-  // 39. 下載 CSV 檔案功能 (僅文字)
   window.downloadCSV = () => {
     const unit = document.getElementById('unitSelect').value;
     if(!unit) { alert('請先選擇課別再進行匯出！'); return; }
@@ -240,10 +303,9 @@
       const rawData = s.val() || {};
       if(Object.keys(rawData).length === 0) { alert('目前無資料可供匯出！'); return; }
       
-      // 下載也採取排序擺放邏輯
       let dataArray = [];
       for(let key in rawData) { dataArray.push(rawData[key]); }
-      dataArray.sort((a, b) => String(a.cat || '').localeCompare(String(b.cat || ''), 'zh-TW'));
+      dataArray.sort((a, b) => getSortWeight(a.cat) - getSortWeight(b.cat));
       
       let csvContent = "\uFEFF"; 
       csvContent += "課別,分類,確認項目,評分,現況說明,改善方式\n";
@@ -272,7 +334,6 @@
 
   function setupEvalFilter() { onValue(ref(db, 'teams'), (s) => { const filter = document.getElementById('evalLeaderFilter'); if(filter) filter.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(s.val() || {}).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
   
-  // 36. 圓形百分比表顯示
   window.renderEval = () => {
     const leader = document.getElementById('evalLeaderFilter').value;
     if(!leader) return;
@@ -333,7 +394,6 @@
   
   function setupLeaderFilter() { onValue(ref(db, 'teams'), (s) => { const lf = document.getElementById('leaderFilter'); if(lf) lf.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(s.val()||{}).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
   
-  // 32. 技能總表加總每個人 "V" 的欄位
   window.renderSkills = () => {
     const leader = document.getElementById('leaderFilter').value;
     if(!leader) return;
