@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V37</title>
+  <title>員工評核系統 - V38</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 24px; font-weight: bold; }
     nav { width: 260px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; }
@@ -36,12 +36,20 @@
 
     /* 有照片的按鈕樣式 */
     .btn-has-photo { border: 4px dashed #ff00ff !important; background: #f5d0fe !important; font-weight: 900 !important; }
+
+    /* ===================================================
+       42. 針對「分類」與「分數」格子、以及「操作按鈕」的縮小專用樣式 
+       =================================================== */
+    .col-cat { width: 70px !important; text-align: center !important; }
+    .col-score { width: 60px !important; text-align: center !important; }
+    .col-action { width: 110px !important; text-align: center !important; }
+    .btn-action-sm { padding: 6px 10px !important; font-size: 18px !important; margin: 2px !important; display: inline-block; }
   </style>
 </head>
 <body>
 
 <nav>
-  <div class="version">版本: 20260604-37</div>
+  <div class="version">版本: 20260604-38</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
@@ -63,7 +71,6 @@
 
   window.currentEditData = null;
   
-  // 35 & 40. 調整與定義分類底色（包含新加入的作法與紀律底色，改亮色系，字體黑）
   const categoryColors = { 
     "整理": "#ffdee2", 
     "整頓": "#e0f2fe", 
@@ -76,7 +83,6 @@
   };
   const getColor = (cat) => categoryColors[cat] || "#ffffff";
 
-  // 40. 定義嚴格的 6S 排序權重 (由上而下分別為：整理、整頓、清掃、清潔、作法、紀律)
   const categoryOrder = { "整理": 1, "整頓": 2, "清掃": 3, "清潔": 4, "作法": 5, "紀律": 6, "素養": 7, "安全": 8 };
   const getSortWeight = (cat) => categoryOrder[cat] || 99;
 
@@ -137,7 +143,6 @@
     reader.readAsDataURL(file);
   };
 
-  // 41. 新增即時重新計算總分的功能，不需要讀取資料庫就能反應
   window.recalcTotal = () => {
     const scoreInputs = document.querySelectorAll('.inline-score-field');
     let total = 0;
@@ -159,30 +164,27 @@
     onValue(ref(db, `6s/${unit}`), (s) => {
       const rawData = s.val() || {};
       
-      // 40. 將原始物件轉成陣列
       let dataArray = [];
       for(let key in rawData) {
         dataArray.push({ key: key, ...rawData[key] });
       }
       
-      // 40. 依照您規定的順序：整理、整頓、清掃、清潔、作法、紀律 進行重量級排序
       dataArray.sort((a, b) => getSortWeight(a.cat) - getSortWeight(b.cat));
 
-      // 34. 編輯與表格資料上下顛倒：最上方放表格數據
+      /* 42. 分類與分數的 th 加上特定寬度樣式類別 */
       let html = `<table class="skill-table">
         <tr>
-          <th style="width: 12%;">分類</th>
-          <th style="text-align:left; width: 22%;">項目</th>
-          <th style="width: 8%;">分數</th>
-          <th style="text-align:left; width: 20%;">現況說明</th>
-          <th style="text-align:left; width: 20%;">改善方式</th>
+          <th class="col-cat">分類</th>
+          <th style="text-align:left; width: 26%;">項目</th>
+          <th class="col-score">分數</th>
+          <th style="text-align:left; width: 22%;">現況說明</th>
+          <th style="text-align:left; width: 22%;">改善方式</th>
           <th style="width: 7%;">善前</th>
           <th style="width: 7%;">善後</th>
-          <th style="width: 14%;">快速操作</th>
+          <th class="col-action">操作</th>
         </tr>`;
       let total = 0;
       
-      // 40. 將內容轉為行內直改模式
       dataArray.forEach((itemData) => {
         total += parseInt(itemData.score) || 0;
         const color = getColor(itemData.cat);
@@ -191,16 +193,16 @@
         const beforeBtnClass = itemData.before ? "btn-action btn-has-photo" : "btn-action";
         const afterBtnClass = itemData.after ? "btn-action btn-has-photo" : "btn-action";
 
-        // 41. 在分數欄位中加入 class="inline-score-field" 以及 oninput="recalcTotal()" 觸發即時計算
+        /* 42. 分類與分數格子小一點，儲存與刪除改為純圖示（💾 與 🗑️），不撐大按鈕 */
         html += `<tr style="background:${color};">
-          <td>
-            <input type="text" id="inline_cat_${key}" class="table-input" value="${itemData.cat || ''}" style="text-align:center;">
+          <td class="col-cat">
+            <input type="text" id="inline_cat_${key}" class="table-input" value="${itemData.cat || ''}" style="text-align:center; padding: 4px;">
           </td>
           <td>
             <input type="text" id="inline_item_${key}" class="table-input" style="text-align:left;" value="${itemData.item || ''}">
           </td>
-          <td>
-            <input type="number" id="inline_score_${key}" class="table-input inline-score-field" style="text-align:center;" value="${itemData.score || '0'}" oninput="recalcTotal()">
+          <td class="col-score">
+            <input type="number" id="inline_score_${key}" class="table-input inline-score-field" style="text-align:center; padding: 4px;" value="${itemData.score || '0'}" oninput="recalcTotal()">
           </td>
           <td>
             <textarea id="inline_note_${key}" class="table-input" rows="2" style="text-align:left; resize:vertical;">${itemData.note || ''}</textarea>
@@ -216,19 +218,17 @@
             ${itemData.after ? `<button class="${afterBtnClass}" style="background:#7dd3fc; padding: 6px;" onclick="viewImg('${itemData.after}')">📷圖</button>` : '無'}
             <input type="file" id="inline_file_a_${key}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
           </td>
-          <td style="text-align:center;">
-            <button class="btn-action" style="background:#86efac; font-weight:900;" onclick="saveInline6S('${unit}', '${key}', '${itemData.before || ''}', '${itemData.after || ''}')">💾儲存</button>
-            <button class="btn-action" style="background:#fca5a5;" onclick="del6S('${unit}','${key}')">刪除</button>
+          <td class="col-action">
+            <button class="btn-action btn-action-sm" style="background:#86efac;" onclick="saveInline6S('${unit}', '${key}', '${itemData.before || ''}', '${itemData.after || ''}')" title="儲存">💾</button>
+            <button class="btn-action btn-action-sm" style="background:#fca5a5;" onclick="del6S('${unit}','${key}')" title="刪除">🗑️</button>
           </td>
         </tr>`;
       });
       
-      // 41. 為總分的數字加上 id="6sTotalScoreDisplay" 方便 JavaScript 動態捕捉修改
       html += `<tr><td colspan="2" style="text-align:center;"><b>總分計</b></td><td style="text-align:center;"><b id="6sTotalScoreDisplay">${total}</b></td><td colspan="5"></td></tr></table>`;
       listDiv.innerHTML = html;
     });
 
-    // 34. 編輯與表格資料上下顛倒：新增全新的空白欄位依舊放在下方備用
     container.innerHTML = `<div class="card" style="border-color:#ef4444; margin-top:30px;"><h3>➕ 新增全新項目 (${unit})</h3>
       <input type="text" id="cat" placeholder="分類 (例如: 整理、整頓、作法、紀律...)"> 
       <input type="text" id="item" placeholder="確認項目"> 
@@ -240,7 +240,6 @@
       <button class="btn" style="background:#ef4444" onclick="save6S('${unit}')">新增一筆紀錄</button></div>`;
   };
 
-  // 40. 全新實作的行內直接修改並儲存函數
   window.saveInline6S = (unit, key, existingBefore, existingAfter) => {
     const cat = document.getElementById(`inline_cat_${key}`).value;
     const item = document.getElementById(`inline_item_${key}`).value;
@@ -253,7 +252,6 @@
     const fileB = document.getElementById(`inline_file_b_${key}`).files[0];
     const fileA = document.getElementById(`inline_file_a_${key}`).files[0];
 
-    // 處理照片壓縮與非同步上傳邏輯
     compressImg(fileB, (b64b) => {
       compressImg(fileA, (b64a) => {
         set(ref(db, `6s/${unit}/${key}`), {
@@ -272,7 +270,6 @@
     });
   };
 
-  // 保留傳統新增功能
   window.save6S = (unit) => {
     const cat = document.getElementById('cat').value;
     const item = document.getElementById('item').value;
