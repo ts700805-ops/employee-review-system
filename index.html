@@ -139,7 +139,7 @@
       content.innerHTML = `<h1>💡 技能評核進度表</h1><select id="evalLeaderFilter" onchange="renderEval()"><option value="">請選擇組長</option></select><div id="evalArea"></div>`;
       setupEvalFilter();
     } else {
-      content.innerHTML = `<div class="gradient-bg"><h1>📊 技能總表</h1><select id="leaderFilter" onchange="renderSkills()"><option value="">請選擇組長</option></select><div id="skillTable"></div></div>`;
+      content.innerHTML = `<div class="gradient-bg"><h1>📊 技能總表(⭐導師)</h1><select id="leaderFilter" onchange="renderSkills()"><option value="">請選擇組長</option></select><div id="skillTable"></div></div>`;
       setupLeaderFilter();
     }
   };
