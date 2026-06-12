@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V39</title>
+  <title>員工評核系統 - V40</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 24px; font-weight: bold; }
     nav { width: 260px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; }
@@ -37,9 +37,7 @@
     /* 有照片的按鈕樣式 */
     .btn-has-photo { border: 4px dashed #ff00ff !important; background: #f5d0fe !important; font-weight: 900 !important; }
 
-    /* ===================================================
-       42. 針對「分類」與「分數」格子、以及「操作按鈕」的縮小專用樣式 
-       =================================================== */
+    /* 42. 針對「分類」與「分數」格子、以及「操作按鈕」的縮小專用樣式 */
     .col-cat { width: 70px !important; text-align: center !important; }
     .col-score { width: 60px !important; text-align: center !important; }
     .col-action { width: 110px !important; text-align: center !important; }
@@ -49,7 +47,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260612-39</div>
+  <div class="version">版本: 20260612-40</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
@@ -95,6 +93,12 @@
     return "circle-progress p-0";
   };
 
+  // 全域變數用來儲存當前的技能符號配置，預設為對勾與星號導師
+  let globalSymbols = { normal: "✓", master: "⭐" };
+  onValue(ref(db, 'settings/symbols'), (s) => {
+    if (s.val()) { globalSymbols = s.val(); }
+  });
+
   window.showPage = (page) => {
     const content = document.getElementById('content');
     window.currentEditData = null; 
@@ -114,8 +118,22 @@
       if (password !== "0000") { alert("密碼錯誤！"); return; }
       content.innerHTML = `
         <div class="card"><h3>📷 照片管理</h3><input type="file" id="photoInput" accept="image/*"><button class="btn" onclick="uploadPhoto()">更新首頁照片</button></div>
+        <div class="card">
+          <h3>🎨 技能總表符號樣式設定</h3>
+          <div style="display:flex; gap:15px;">
+            <div style="flex:1;">一般技能符號：<input type="text" id="symNormal" value="${globalSymbols.normal}"></div>
+            <div style="flex:1;">導師技能符號：<input type="text" id="symMaster" value="${globalSymbols.master}"></div>
+          </div>
+          <button class="btn" style="background:#f59e0b; margin-top:10px;" onclick="saveSymbols()">儲存符號設定</button>
+        </div>
         <div class="card"><h3>👥 員工配置</h3><input type="text" id="ln" placeholder="組長名稱"><input type="text" id="ml" placeholder="組員名稱(逗號分隔)"><button class="btn" onclick="addTeam()">儲存新組別</button><hr><div id="teamList"></div></div>
-        <div class="card"><h3>🛠️ 技能設定</h3><select id="sLeaderSelect" onchange="updateMemberSelect()"><option value="">選擇組長</option></select><select id="sMemberSelect"><option value="">請先選擇組長</option></select><input type="text" id="sName" placeholder="技能名稱(逗號分隔)"><button class="btn" onclick="addSkill()">新增技能</button><hr><div id="skillEditArea"></div></div>`;
+        <div class="card"><h3>🛠️ 技能設定</h3><select id="sLeaderSelect" onchange="updateMemberSelect()"><option value="">選擇組長</option></select><select id="sMemberSelect"><option value="">請先選擇組長</option></select>
+        <div style="margin: 10px 0; font-size:20px;">
+          技能類型：
+          <label><input type="radio" name="skillType" value="normal" checked style="width:auto; margin-right:5px;">一般技能</label>
+          <label><input type="radio" name="skillType" value="master" style="width:auto; margin-left:20px; margin-right:5px;">技能導師</label>
+        </div>
+        <input type="text" id="sName" placeholder="技能名稱(逗號分隔)"><button class="btn" onclick="addSkill()">新增技能</button><hr><div id="skillEditArea"></div></div>`;
       renderTeams(); loadLeaders();
     } else if (page === 'eval') {
       content.innerHTML = `<h1>💡 技能評核進度表</h1><select id="evalLeaderFilter" onchange="renderEval()"><option value="">請選擇組長</option></select><div id="evalArea"></div>`;
@@ -171,7 +189,6 @@
       
       dataArray.sort((a, b) => getSortWeight(a.cat) - getSortWeight(b.cat));
 
-      /* 42. 分類與分數的 th 加上特定寬度樣式類別 */
       let html = `<table class="skill-table">
         <tr>
           <th class="col-cat">分類</th>
@@ -193,7 +210,6 @@
         const beforeBtnClass = itemData.before ? "btn-action btn-has-photo" : "btn-action";
         const afterBtnClass = itemData.after ? "btn-action btn-has-photo" : "btn-action";
 
-        /* 42. 分類與分數格子小一點，儲存與刪除改為純圖示（💾 與 🗑️），不撐大按鈕 */
         html += `<tr style="background:${color};">
           <td class="col-cat">
             <input type="text" id="inline_cat_${key}" class="table-input" value="${itemData.cat || ''}" style="text-align:center; padding: 4px;">
@@ -378,8 +394,45 @@
   
   window.uploadPhoto = () => { const f = document.getElementById('photoInput').files[0]; const r = new FileReader(); r.onload = e => set(ref(db, 'homepage/photo'), e.target.result).then(() => alert('🎉 首頁照片更新儲存成功！')); if(f) r.readAsDataURL(f); };
   window.addTeam = () => set(ref(db, 'teams/' + document.getElementById('ln').value), document.getElementById('ml').value).then(() => alert('🎉 新組別人員配置儲存成功！'));
-  window.addSkill = () => set(ref(db, `skills/${document.getElementById('sLeaderSelect').value}/${document.getElementById('sMemberSelect').value}`), document.getElementById('sName').value).then(() => alert('🎉 成員技能設定新增成功！'));
   
+  // 新增技能：支援儲存普通技能(欄位格式: 技能名) 或 導師技能(欄位格式: 技能名__master)
+  window.addSkill = () => {
+    const leader = document.getElementById('sLeaderSelect').value;
+    const member = document.getElementById('sMemberSelect').value;
+    const skillsInput = document.getElementById('sName').value;
+    const type = document.querySelector('input[name="skillType"]:checked').value;
+
+    if(!leader || !member || !skillsInput) { alert('請完整選擇組長、組員並輸入技能名稱！'); return; }
+
+    const newSkillsArr = skillsInput.split(',').map(sk => {
+      const clean = sk.trim();
+      return type === 'master' ? `${clean}__master` : clean;
+    }).filter(sk => sk);
+
+    // 先讀取現有技能再合併
+    onValue(ref(db, `skills/${leader}/${member}`), (snapshot) => {
+      let currentVal = snapshot.val() || "";
+      let currentArr = currentVal.split(',').map(s => s.trim()).filter(s => s);
+      
+      newSkillsArr.forEach(ns => {
+        if(!currentArr.includes(ns)) { currentArr.push(ns); }
+      });
+
+      set(ref(db, `skills/${leader}/${member}`), currentArr.join(',')).then(() => {
+        alert('🎉 成員技能設定新增成功！');
+        renderSkillsAdminByLeader(leader);
+      });
+    }, { onlyOnce: true });
+  };
+  
+  window.saveSymbols = () => {
+    const normal = document.getElementById('symNormal').value || "✓";
+    const master = document.getElementById('symMaster').value || "⭐";
+    set(ref(db, 'settings/symbols'), { normal, master }).then(() => {
+      alert('🎉 技能總表顯示符號修改成功！已即時發送至雲端。');
+    });
+  };
+
   window.saveAdminTeam = (l) => { const val = document.getElementById('e_'+l).value; set(ref(db, `teams/${l}`), val).then(() => alert(`🎉 [${l}組] 人員配置修改並儲存成功！`)); };
   window.saveAdminSkill = (leader, member) => { const val = document.getElementById(`es_${member}`).value; set(ref(db, `skills/${leader}/${member}`), val).then(() => alert(`🎉 [${member}] 技能清單修改並儲存成功！`)); };
 
@@ -411,36 +464,47 @@
     onValue(ref(db, `skills/${leader}`), (s) => {
       const data = s.val() || {};
       let skills = new Set(); 
-      Object.values(data).forEach(v => v.split(',').forEach(sk => { if(sk.trim()) skills.add(sk.trim()); }));
+      
+      // 解析出不重複的原始技能名稱
+      Object.values(data).forEach(v => v.split(',').forEach(sk => {
+        let clean = sk.trim().replace('__master', '');
+        if(clean) skills.add(clean);
+      }));
       
       const skillsArray = Array.from(skills);
-      
-      // 用來統計每項技能「拿到勾選的總人數」的陣列，先全部預設為 0
       let skillCounts = new Array(skillsArray.length).fill(0);
 
       let h = `<table class="skill-table"><tr><th>組員</th>` + skillsArray.map(sk => `<th>${sk}</th>`).join('') + `<th style="background:#bae6fd; text-align:center;">取得技能總數 (V)</th></tr>`;
       
       for(let m in data) {
         let count = 0;
+        let memberSkills = data[m].split(',').map(x => x.trim());
+
         let rowHtml = `<tr><td>${m}</td>` + skillsArray.map((sk, idx) => { 
-          if(data[m].includes(sk)){ 
+          const hasNormal = memberSkills.includes(sk);
+          const hasMaster = memberSkills.includes(`${sk}__master`);
+
+          if(hasNormal || hasMaster){ 
             count++; 
-            skillCounts[idx]++; // 該項技能取得人數 +1
-            return '<td style="text-align:center; color:#22c55e; font-size:26px;">✓</td>'; 
+            skillCounts[idx]++; // 只要有取得，不論是否是導師身份，皆正確加總人數
+            
+            // 根據後台設定動態顯示符號
+            let displaySymbol = hasMaster ? globalSymbols.master : globalSymbols.normal;
+            let displayColor = hasMaster ? "#a855f7" : "#22c55e"; // 導師顯示高亮紫色，一般顯示綠色
+            
+            return `<td style="text-align:center; color:${displayColor}; font-size:26px;">${displaySymbol}</td>`; 
           } 
           return '<td></td>'; 
         }).join('') + `<td style="text-align:center; background:#f0f9ff; font-size:26px; color:#0369a1;">${count} 個</td></tr>`;
         h += rowHtml;
       }
       
-      /* ===================================================
-         43. 📊 新增「技能總人數」加總統計列 (與照片底部框一樣邏輯)
-         =================================================== */
+      // 43. 統計列：技能總人數
       let totalRowHtml = `<tr style="background:#fef08a;"><td style="color:#ef4444; font-weight:900;">技能總人數</td>`;
       skillCounts.forEach(count => {
         totalRowHtml += `<td style="text-align:center; color:#ef4444; font-weight:900; font-size:24px;">${count} 人</td>`;
       });
-      totalRowHtml += `<td style="background:#fef08a;"></td></tr>`; // 最後一欄加總不需填值
+      totalRowHtml += `<td style="background:#fef08a;"></td></tr>`;
       
       h += totalRowHtml;
 
