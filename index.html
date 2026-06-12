@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V38</title>
+  <title>員工評核系統 - V39</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 24px; font-weight: bold; }
     nav { width: 260px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; }
@@ -49,7 +49,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260604-38</div>
+  <div class="version">版本: 20260612-39</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('skills')">📊 技能總表</div>
@@ -410,19 +410,40 @@
     if(!leader) return;
     onValue(ref(db, `skills/${leader}`), (s) => {
       const data = s.val() || {};
-      let skills = new Set(); Object.values(data).forEach(v => v.split(',').forEach(sk => { if(sk.trim()) skills.add(sk.trim()); }));
-      let h = `<table class="skill-table"><tr><th>組員</th>` + Array.from(skills).map(sk => `<th>${sk}</th>`).join('') + `<th style="background:#bae6fd; text-align:center;">取得技能總數 (V)</th></tr>`;
+      let skills = new Set(); 
+      Object.values(data).forEach(v => v.split(',').forEach(sk => { if(sk.trim()) skills.add(sk.trim()); }));
+      
+      const skillsArray = Array.from(skills);
+      
+      // 用來統計每項技能「拿到勾選的總人數」的陣列，先全部預設為 0
+      let skillCounts = new Array(skillsArray.length).fill(0);
+
+      let h = `<table class="skill-table"><tr><th>組員</th>` + skillsArray.map(sk => `<th>${sk}</th>`).join('') + `<th style="background:#bae6fd; text-align:center;">取得技能總數 (V)</th></tr>`;
+      
       for(let m in data) {
         let count = 0;
-        let rowHtml = `<tr><td>${m}</td>` + Array.from(skills).map(sk => { 
+        let rowHtml = `<tr><td>${m}</td>` + skillsArray.map((sk, idx) => { 
           if(data[m].includes(sk)){ 
             count++; 
+            skillCounts[idx]++; // 該項技能取得人數 +1
             return '<td style="text-align:center; color:#22c55e; font-size:26px;">✓</td>'; 
           } 
           return '<td></td>'; 
         }).join('') + `<td style="text-align:center; background:#f0f9ff; font-size:26px; color:#0369a1;">${count} 個</td></tr>`;
         h += rowHtml;
       }
+      
+      /* ===================================================
+         43. 📊 新增「技能總人數」加總統計列 (與照片底部框一樣邏輯)
+         =================================================== */
+      let totalRowHtml = `<tr style="background:#fef08a;"><td style="color:#ef4444; font-weight:900;">技能總人數</td>`;
+      skillCounts.forEach(count => {
+        totalRowHtml += `<td style="text-align:center; color:#ef4444; font-weight:900; font-size:24px;">${count} 人</td>`;
+      });
+      totalRowHtml += `<td style="background:#fef08a;"></td></tr>`; // 最後一欄加總不需填值
+      
+      h += totalRowHtml;
+
       const st = document.getElementById('skillTable'); if(st) st.innerHTML = h + '</table>';
     });
   };
