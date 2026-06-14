@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V41</title>
+  <title>員工評核系統 - V42</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 24px; font-weight: bold; }
     nav { width: 260px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; }
@@ -15,7 +15,7 @@
     .btn-action { padding: 10px 16px; margin: 4px; cursor: pointer; border-radius: 5px; border: 2px solid #000; font-weight: bold; font-size: 18px; color: #000; }
     input, select, textarea { padding: 12px; margin: 8px 0; border: 3px solid #000; border-radius: 8px; width: 100%; font-size: 22px; font-weight: bold; color: #000; background: #fff; box-sizing: border-box; }
     
-    /* 針對表格內的輸入框做特別優化 */
+    /* 針對表格內的輸入框做特別優化，讓寬度縮小且文字更黑更粗 */
     .table-input { font-size: 20px; font-weight: bold; color: #000; background: rgba(255,255,255,0.7); border: 2px solid #000; margin: 0; padding: 6px; width: 100%; }
     
     .version { font-size: 18px; color: #475569; margin-bottom: 20px; font-weight: bold; }
@@ -47,12 +47,12 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260614-41</div>
+  <div class="version">版本: 20260614-42</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('skills')">📊 技能總表(⭐導師)</div>
   <div onclick="showPage('6s')">✅ 6S Check</div>
-  <div onclick="showPage('performance')">📊 平日績效紀錄表</div>
+  <div onclick="showPage('performance')">📈 平日績效紀錄表</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
 </nav>
 
@@ -115,10 +115,9 @@
         </div>
         <div id="sixSList"></div><hr><div id="sixSContainer"></div>`;
     } else if (page === 'performance') {
-      const password = prompt("請輸入密碼以進入平日績效紀錄表:");
-      if (password !== "0000") { alert("密碼錯誤！"); return; }
+      // 46. 修正：移除進畫面時的密碼詢問，直接將畫面呈獻給使用者
       content.innerHTML = `
-        <h1>📊 平日績效紀錄表</h1>
+        <h1>📈 平日績效紀錄表</h1>
         <div class="card" style="border-color: #4f46e5;">
           <h3>➕ 新增 / 編輯績效紀錄 (置頂控制台)</h3>
           <div style="display: flex; gap: 15px; margin-bottom: 10px;">
@@ -130,11 +129,12 @@
             <div style="flex: 1;">績效分數 (可填正負分)：<input type="number" id="pfScore" placeholder="例如: 5 或 -3"></div>
             <div style="flex: 1;">記錄人員：<input type="text" id="pfRecorder" placeholder="請輸入名字"></div>
           </div>
+          <div style="margin-bottom: 10px;">內容說明敘述：<textarea id="pfContentDesc" placeholder="請填寫具體加減分之內容說明事由..." rows="2" style="text-align: left; font-weight: bold; color: #000;"></textarea></div>
           <div style="margin: 15px 0; font-size: 20px;">表現證明照片：<input type="file" id="pfPhotoFile" accept="image/*"></div>
           <button class="btn" style="background: #4f46e5;" onclick="savePerformanceRecord()">💾 儲存並發送雲端</button>
         </div>
         <div class="card" style="background: #f1f5f9; border-color: #000;">
-          <h3>🔍 篩選與即時總分看版</h3>
+          <h3>🔍 篩選與即時總分看板</h3>
           <div style="display: flex; gap: 15px; align-items: center;">
             <select id="filterLeader" style="width: auto; min-width: 200px;" onchange="updateFilterMemberSelect()"><option value="">篩選所有組長</option></select>
             <select id="filterMember" style="width: auto; min-width: 200px;" onchange="renderPerformance()"><option value="">篩選所有組員</option></select>
@@ -522,53 +522,41 @@
   };
 
   // ==========================================
-  // 📈 第 45 項 新增功能：平日績效紀錄表 核心邏輯
+  // 📈 第 45 & 46 項 新增功能：平日績效紀錄表 核心邏輯
   // ==========================================
 
-  // 初始化績效頁面連動下拉選單
   function initPerformancePageData() {
-    // 設定當天日期預設值
     const today = new Date().toISOString().split('T')[0];
     const dateInput = document.getElementById('pfDate');
     if(dateInput) dateInput.value = today;
 
-    // 載入編輯控制台的組長
     onValue(ref(db, 'teams'), (snapshot) => {
       const teamsData = snapshot.val() || {};
-      
-      // 1. 填入最上方新增區塊的組長選單
       const pfLeader = document.getElementById('pfLeaderSelect');
       if(pfLeader) {
         pfLeader.innerHTML = '<option value="">選擇組長</option>' + 
           Object.keys(teamsData).map(l => `<option value="${l}">${l}</option>`).join('');
       }
-
-      // 2. 填入篩選器區塊的組長選單
       const filterLeader = document.getElementById('filterLeader');
       if(filterLeader) {
         filterLeader.innerHTML = '<option value="">篩選所有組長</option>' + 
           Object.keys(teamsData).map(l => `<option value="${l}">${l}</option>`).join('');
       }
-      
-      // 預設渲染全部績效資料
       renderPerformance();
     });
   }
 
-  // 控制台選組長，同步連動組員
   window.updatePfMemberSelect = () => {
     const leader = document.getElementById('pfLeaderSelect').value;
     const pfMember = document.getElementById('pfMemberSelect');
     if(!pfMember) return;
     if(!leader) { pfMember.innerHTML = '<option value="">請先選擇組長</option>'; return; }
-    
     onValue(ref(db, 'teams/' + leader), (s) => {
       const members = (s.val() || "").split(',').map(m => m.trim()).filter(m => m);
       pfMember.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
     });
   };
 
-  // 篩選器選組長，同步連動組員篩選清單
   window.updateFilterMemberSelect = () => {
     const leader = document.getElementById('filterLeader').value;
     const filterMember = document.getElementById('filterMember');
@@ -578,7 +566,6 @@
       renderPerformance(); 
       return; 
     }
-    
     onValue(ref(db, 'teams/' + leader), (s) => {
       const members = (s.val() || "").split(',').map(m => m.trim()).filter(m => m);
       filterMember.innerHTML = '<option value="">篩選所有組員</option>' + 
@@ -587,13 +574,17 @@
     });
   };
 
-  // 儲存或編輯一筆平日績效紀錄
+  // 46. 修正：儲存時觸發密碼輸入
   window.savePerformanceRecord = () => {
+    const password = prompt("🚨 此項操作需權限，請輸入管理員密碼:");
+    if (password !== "0000") { alert("密碼錯誤，拒絕儲存！"); return; }
+
     const leader = document.getElementById('pfLeaderSelect').value;
     const name = document.getElementById('pfMemberSelect').value;
     const date = document.getElementById('pfDate').value;
     const score = parseInt(document.getElementById('pfScore').value);
     const recorder = document.getElementById('pfRecorder').value;
+    const contentDesc = document.getElementById('pfContentDesc').value; // 46. 內容說明欄位
     const photoFile = document.getElementById('pfPhotoFile').files[0];
 
     if(!leader || !name || !date || isNaN(score) || !recorder) {
@@ -601,25 +592,20 @@
       return;
     }
 
-    // 判斷是全新紀錄還是拿現成Edit的Key
     const key = window.currentEditPfKey || Date.now();
     const existingPhoto = window.currentEditPfPhotoBase64 || "";
 
     const doSave = (b64Photo) => {
       set(ref(db, `performance_records/${key}`), {
-        key: key,
-        leader: leader,
-        name: name,
-        date: date,
-        score: score,
-        recorder: recorder,
+        key: key, leader: leader, name: name, date: date, score: score, recorder: recorder,
+        contentDesc: contentDesc || "", // 46. 內容說明欄位
         photo: b64Photo || existingPhoto || ""
       }).then(() => {
         alert('🎉 平日績效資料成功同步儲存至雲端！');
-        // 重設輸入框
         window.currentEditPfKey = null;
         window.currentEditPfPhotoBase64 = null;
         document.getElementById('pfScore').value = '';
+        document.getElementById('pfContentDesc').value = '';
         document.getElementById('pfPhotoFile').value = '';
         renderPerformance();
       }).catch(err => alert('同步失敗: ' + err));
@@ -632,7 +618,6 @@
     }
   };
 
-  // 讀取 Firebase 並渲染績效資料表格（具備加總、篩選與即時編輯功能）
   window.renderPerformance = () => {
     const filterL = document.getElementById('filterLeader').value;
     const filterM = document.getElementById('filterMember').value;
@@ -644,45 +629,39 @@
       let dataArray = [];
       for(let k in rawData) { dataArray.push(rawData[k]); }
       
-      // 依日期由新到舊排序
       dataArray.sort((a, b) => b.key - a.key);
 
-      // 先行過濾出要呈現的資料，同時用於統計總得分
       let filteredData = dataArray.filter(item => {
         if(filterL && item.leader !== filterL) return false;
         if(filterM && item.name !== filterM) return false;
         return true;
       });
 
-      // 個人分數即時加總邏輯
       let calcTotalScore = 0;
       filteredData.forEach(item => { calcTotalScore += parseInt(item.score) || 0; });
       
-      // 更新即時總分看板
       const badgeVal = document.getElementById('summaryScoreVal');
-      if(badgeVal) {
-        badgeVal.innerText = (calcTotalScore >= 0 ? "+" : "") + calcTotalScore;
-      }
+      if(badgeVal) { badgeVal.innerText = (calcTotalScore >= 0 ? "+" : "") + calcTotalScore; }
 
-      // 產生資料格與直接編輯輸入元件
+      // 46. 表格欄位加入「內容說明」
       let html = `<table class="skill-table">
         <tr>
-          <th style="width: 15%; text-align:center;">日期</th>
-          <th style="width: 12%; text-align:center;">組長</th>
-          <th style="width: 15%; text-align:center;">人員姓名</th>
-          <th style="width: 10%; text-align:center;">績效分數</th>
-          <th style="width: 15%; text-align:center;">記錄人員</th>
-          <th style="width: 13%; text-align:center;">照片證明</th>
-          <th style="width: 20%; text-align:center;">操作功能</th>
+          <th style="width: 13%; text-align:center;">日期</th>
+          <th style="width: 10%; text-align:center;">組長</th>
+          <th style="width: 12%; text-align:center;">人員姓名</th>
+          <th style="width: 8%; text-align:center;">分數</th>
+          <th style="width: 25%; text-align:left;">內容說明</th> <th style="width: 12%; text-align:center;">記錄人員</th>
+          <th style="width: 10%; text-align:center;">照片證明</th>
+          <th style="width: 10%; text-align:center;">操作功能</th>
         </tr>`;
 
       if(filteredData.length === 0) {
-        html += `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">目前尚無符合篩選條件的績效紀錄。</td></tr>`;
+        html += `<tr><td colspan="8" style="text-align:center; color:#94a3b8;">目前尚無符合篩選條件的績效紀錄。</td></tr>`;
       } else {
         filteredData.forEach(item => {
           const k = item.key;
           const photoBtnClass = item.photo ? "btn-action btn-has-photo" : "btn-action";
-          const rowBg = item.score >= 0 ? "background:#f0fdf4;" : "background:#fef2f2;"; // 正分給淡綠色，負分給淡紅色底色
+          const rowBg = item.score >= 0 ? "background:#f0fdf4;" : "background:#fef2f2;";
 
           html += `<tr style="${rowBg}">
             <td>
@@ -694,6 +673,9 @@
               <input type="number" id="pf_inline_score_${k}" class="table-input" style="text-align:center;" value="${item.score || 0}">
             </td>
             <td>
+              <textarea id="pf_inline_desc_${k}" class="table-input" rows="2" style="text-align:left; resize:vertical;">${item.contentDesc || ''}</textarea>
+            </td>
+            <td>
               <input type="text" id="pf_inline_recorder_${k}" class="table-input" value="${item.recorder || ''}">
             </td>
             <td style="text-align:center;">
@@ -701,9 +683,9 @@
               <input type="file" id="pf_inline_file_${k}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
             </td>
             <td style="text-align:center;">
-              <button class="btn-action btn-action-sm" style="background:#86efac;" onclick="saveInlinePerformance('${k}', '${item.leader}', '${item.name}', '${item.photo || ''}')" title="點擊直接同步雲端內容">💾 儲存</button>
-              <button class="btn-action btn-action-sm" style="background:#fde047;" onclick="loadToTopPerformanceEditor('${k}', '${item.leader}', '${item.name}', '${item.date}', '${item.score}', '${item.recorder}', '${item.photo || ''}')" title="拉到上方大控制台進行進階編輯">✏️ 修改</button>
-              <button class="btn-action btn-action-sm" style="background:#fca5a5;" onclick="deletePerformanceRecord('${k}')" title="刪除此筆紀錄">🗑️</button>
+              <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:90%; margin:4px auto;" onclick="saveInlinePerformance('${k}', '${item.leader}', '${item.name}', '${item.photo || ''}')" title="同步格子內容">💾 儲存</button>
+              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:90%; margin:4px auto;" onclick="loadToTopPerformanceEditor('${k}', '${item.leader}', '${item.name}', '${item.date}', '${item.score}', '${item.recorder}', \`${item.contentDesc || ''}\`, '${item.photo || ''}')" title="拉到上方編輯">✏️ 修改</button>
+              <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:90%; margin:4px auto;" onclick="deletePerformanceRecord('${k}')" title="刪除紀錄">🗑️</button>
             </td>
           </tr>`;
         });
@@ -714,26 +696,26 @@
     });
   };
 
-  // 格子內「直接儲存修改」的功能實作
+  // 46. 修正：格子內「直接儲存修改」加設密碼驗證
   window.saveInlinePerformance = (key, leader, name, existingPhoto) => {
+    const password = prompt("🚨 修改資料需進行權限驗證，請輸入密碼:");
+    if (password !== "0000") { alert("密碼錯誤，更新失敗！"); return; }
+
     const uDate = document.getElementById(`pf_inline_date_${key}`).value;
     const uScore = parseInt(document.getElementById(`pf_inline_score_${key}`).value);
     const uRecorder = document.getElementById(`pf_inline_recorder_${key}`).value;
+    const uDesc = document.getElementById(`pf_inline_desc_${key}`).value; // 46. 內容說明
     const fileEl = document.getElementById(`pf_inline_file_${key}`).files[0];
 
     if(!uDate || isNaN(uScore) || !uRecorder) { alert('欄位不能為空！'); return; }
 
     const updateProcess = (b64) => {
       set(ref(db, `performance_records/${key}`), {
-        key: parseInt(key),
-        leader: leader,
-        name: name,
-        date: uDate,
-        score: uScore,
-        recorder: uRecorder,
+        key: parseInt(key), leader: leader, name: name, date: uDate, score: uScore, recorder: uRecorder,
+        contentDesc: uDesc || "",
         photo: b64 || existingPhoto || ""
       }).then(() => {
-        alert('🎉 該列績效內容已直接在格子內修改完成並同步雲端！');
+        alert('🎉 該列績效內容已在格子內修改完成並同步雲端！');
         renderPerformance();
       }).catch(err => alert('更新失敗: ' + err));
     };
@@ -745,15 +727,17 @@
     }
   };
 
-  // 拉至上方大控制台進行詳細調整
-  window.loadToTopPerformanceEditor = (key, leader, name, date, score, recorder, photo) => {
+  // 46. 修正：拉回上方編輯也加設密碼驗證，並正確填入「內容說明」
+  window.loadToTopPerformanceEditor = (key, leader, name, date, score, recorder, contentDesc, photo) => {
+    const password = prompt("🚨 載入編輯資料需進行權限驗證，請輸入密碼:");
+    if (password !== "0000") { alert("密碼錯誤，拒絕加載！"); return; }
+
     window.currentEditPfKey = key;
     window.currentEditPfPhotoBase64 = photo;
     
     const pLeader = document.getElementById('pfLeaderSelect');
     if(pLeader) pLeader.value = leader;
     
-    // 觸發連動並帶入名字
     onValue(ref(db, 'teams/' + leader), (s) => {
       const pfMember = document.getElementById('pfMemberSelect');
       if(pfMember) {
@@ -766,12 +750,16 @@
     document.getElementById('pfDate').value = date;
     document.getElementById('pfScore').value = score;
     document.getElementById('pfRecorder').value = recorder;
+    document.getElementById('pfContentDesc').value = contentDesc; // 46. 填入控制台說明欄
     
-    alert('📍 資料已帶入最上方控制台，您可以編輯內文或上傳新照片，完成後按下【儲存並發送雲端】按鈕即可！');
+    alert('📍 資料已成功回填最上方控制台！可點擊上方大按鈕重新發送雲端！');
   };
 
-  // 刪除績效紀錄
+  // 46. 修正：刪除需驗證密碼
   window.deletePerformanceRecord = (key) => {
+    const password = prompt("🚨 警告：此項目將從資料庫中永久刪除，請輸入確認密碼:");
+    if (password !== "0000") { alert("密碼錯誤，刪除程序終止！"); return; }
+
     if(confirm('確定要永久刪除此筆平日績效紀錄嗎？')) {
       remove(ref(db, `performance_records/${key}`)).then(() => {
         alert('資料已成功自雲端刪除！');
