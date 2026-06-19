@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V45</title>
+  <title>員工評核系統 - V46</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 24px; font-weight: bold; }
     nav { width: 260px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; z-index: 100; }
@@ -47,13 +47,13 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260619-45</div>
+  <div class="version">版本: 20260619-46</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('skills')">📊 技能總表(⭐導師)</div>
   <div onclick="showPage('6s')">✅ 6S Check</div>
   <div onclick="showPage('performance')">📈 平日績效紀錄表</div>
-  <div onclick="showPage('torque')">🔧 藍芽扭力螺絲查檢回報區</div>
+  <div onclick="showPage('torque')">📡⚙️ 藍芽扭力查檢回報區</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
 </nav>
 
@@ -73,10 +73,10 @@
   window.currentEditPfKey = null;
   window.currentEditPfPhotoBase64 = null;
   
-  // 49. 藍芽扭力專用全域變數
+  // 藍芽扭力專用全域變數
   window.currentEditTqKey = null;
   window.currentEditTqPhotoBase64 = null;
-  window.torqueLocalTeams = { "製造一廠": [], "製造二廠": [] }; // 快取本地此頁面後台名單
+  window.torqueFullSettings = {}; // 快取結構: { 廠區名: { workers: [], checkers: [] } }
   
   const categoryColors = { 
     "整理": "#ffdee2", "整頓": "#e0f2fe", "清掃": "#fff7ed", "清潔": "#dcfce7", "作法": "#fef08a", "紀律": "#fed7aa", "素養": "#f3e8ff", "安全": "#fee2e2" 
@@ -85,7 +85,6 @@
   const categoryOrder = { "整理": 1, "整頓": 2, "清掃": 3, "清潔": 4, "作法": 5, "紀律": 6, "素養": 7, "安全": 8 };
   const getSortWeight = (cat) => categoryOrder[cat] || 99;
 
-  // 48. 平日績效動態分配組長專屬底色調色盤
   const leaderColorPalette = ["#e0f2fe", "#dcfce7", "#fef9c3", "#f3e8ff", "#ffe4e6", "#ffedd5", "#e2e8f0", "#ccfbf1"];
   const leaderColorMap = {};
   let leaderColorIndex = 0;
@@ -158,13 +157,13 @@
         <div id="performanceListArea"></div>`;
       initPerformancePageData();
     } else if (page === 'torque') {
-      // 45 & 49 獨立新分頁架構修改：廠區動態人員連動與底端獨立後台
+      // V46 全面重組藍芽扭力查檢回報區：完美自定義廠區與自定義查檢/作業人員後台
       content.innerHTML = `
-        <h1>🔧 藍芽扭力螺絲查檢回報區</h1>
+        <h1>📡⚙️ 藍芽扭力查檢回報區</h1>
         <div class="card" style="border-color: #0ea5e9;">
           <h3>➕ 新增 / 編輯查檢內容 (置頂控制台)</h3>
           <div style="display: flex; gap: 15px; margin-bottom: 10px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 200px;">5. 廠區：<select id="tqFactorySelect" onchange="updateTqWorkerAndCheckerDropdowns()"><option value="製造一廠">製造一廠</option><option value="製造二廠">製造二廠</option></select></div>
+            <div style="flex: 1; min-width: 200px;">5. 廠區：<select id="tqFactorySelect" onchange="updateTqWorkerAndCheckerDropdowns()"><option value="">請選擇廠區</option></select></div>
             <div style="flex: 1; min-width: 200px;">3. 作業人員：<select id="tqWorkerSelect"><option value="">請先選擇廠區</option></select></div>
             <div style="flex: 1; min-width: 200px;">4. 查檢人員：<select id="tqCheckerSelect"><option value="">請先選擇廠區</option></select></div>
           </div>
@@ -180,7 +179,7 @@
           <h3>🔍 即時複合條件篩選看板</h3>
           <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
             <input type="text" id="fTqOrder" placeholder="關鍵字篩選製令" style="width: auto; min-width: 180px;" oninput="renderTorqueList()">
-            <select id="fTqFactory" style="width: auto; min-width: 180px;" onchange="updateTqFilterDropdowns(); renderTorqueList();"><option value="">所有廠區</option><option value="製造一廠">製造一廠</option><option value="製造二廠">製造二廠</option></select>
+            <select id="fTqFactory" style="width: auto; min-width: 180px;" onchange="updateTqFilterDropdowns(); renderTorqueList();"><option value="">所有廠區</option></select>
             <select id="fTqWorker" style="width: auto; min-width: 180px;" onchange="renderTorqueList()"><option value="">所有作業人員</option></select>
             <select id="fTqChecker" style="width: auto; min-width: 180px;" onchange="renderTorqueList()"><option value="">所有查檢人員</option></select>
             <input type="date" id="fTqDate" style="width: auto; min-width: 180px;" onchange="renderTorqueList()">
@@ -189,18 +188,17 @@
         </div>
         <div id="torqueListArea"></div>
         <hr style="border: 2px dashed #0ea5e9; margin: 40px 0;">
+        
         <div class="card" style="border: 4px solid #000; background: #f0f9ff;">
-          <h3>⚙️ 藍芽扭力螺絲 獨立後台設定區</h3>
-          <div style="margin-bottom: 15px;">
-            <b>製造一廠 人員名單：</b>
-            <input type="text" id="tqAdminF1" placeholder="填寫製造一廠人員姓名，請用英文逗號隔開">
-            <button class="btn-action" style="background: #67e8f9;" onclick="saveTorqueAdminTeam('製造一廠')">儲存一廠名單</button>
+          <h3>⚙️ 藍芽扭力查檢 獨立後台設定區</h3>
+          <div style="background: #fff; padding: 20px; border: 2px solid #000; border-radius: 8px; margin-bottom: 20px;">
+            <h4>➕ 新增自定義廠區</h4>
+            <div style="display: flex; gap: 15px;">
+              <input type="text" id="newTqFactoryName" placeholder="請輸入新廠區名稱 (例如: 製造三廠)">
+              <button class="btn" style="background: #0ea5e9; white-space: nowrap;" onclick="addNewTorqueFactory()">新增廠區</button>
+            </div>
           </div>
-          <div style="margin-bottom: 15px;">
-            <b>製造二廠 人員名單：</b>
-            <input type="text" id="tqAdminF2" placeholder="填寫製造二廠人員姓名，請用英文逗號隔開">
-            <button class="btn-action" style="background: #67e8f9;" onclick="saveTorqueAdminTeam('製造二廠')">儲存二廠名單</button>
-          </div>
+          <div id="torqueAdminConfigContainer"></div>
         </div>`;
       initTorquePageData();
     } else if (page === 'admin') {
@@ -740,7 +738,7 @@
 
 
   // =========================================================================
-  // 🔧 49. 藍芽扭力螺絲查檢回報區 核心邏輯架構 (密碼: 123456，完全獨立且廠區連動)
+  // 📡⚙️ V46 藍芽扭力螺絲查檢回報區 核心邏輯架構 (完全自定義廠區與人員名單，密碼: 123456)
   // =========================================================================
 
   function initTorquePageData() {
@@ -748,78 +746,171 @@
     const dateInput = document.getElementById('tqDate');
     if(dateInput) dateInput.value = today;
 
-    // 監聽本分頁獨立雲端資料庫後台節點
-    onValue(ref(db, 'torque_settings/teams'), (snapshot) => {
-      const data = snapshot.val() || {};
-      window.torqueLocalTeams = {
-        "製造一廠": (data["製造一廠"] || "").split(',').map(m => m.trim()).filter(m => m),
-        "製造二廠": (data["製造二廠"] || "").split(',').map(m => m.trim()).filter(m => m)
-      };
+    // 監聽本分頁獨立雲端後台結構節點
+    onValue(ref(db, 'torque_v46_settings'), (snapshot) => {
+      window.torqueFullSettings = snapshot.val() || {};
+      
+      // 1. 更新上方控制台「廠區」下拉選單
+      const tqFactorySelect = document.getElementById('tqFactorySelect');
+      const savedFactoryVal = tqFactorySelect ? tqFactorySelect.value : "";
+      
+      // 2. 更新中間篩選控制台「廠區」下拉選單
+      const fTqFactory = document.getElementById('fTqFactory');
+      const savedFilterFactoryVal = fTqFactory ? fTqFactory.value : "";
 
-      // 回填獨立後台文字輸入框
-      const admF1 = document.getElementById('tqAdminF1');
-      const admF2 = document.getElementById('tqAdminF2');
-      if (admF1) admF1.value = (data["製造一廠"] || "");
-      if (admF2) admF2.value = (data["製造二廠"] || "");
+      const factories = Object.keys(window.torqueFullSettings);
 
-      // 觸發連動更新上方的填寫控制台與篩選控制台
+      if(tqFactorySelect) {
+        tqFactorySelect.innerHTML = factories.map(f => `<option value="${f}">${f}</option>`).join('');
+        if(savedFactoryVal && factories.includes(savedFactoryVal)) {
+          tqFactorySelect.value = savedFactoryVal;
+        }
+      }
+
+      if(fTqFactory) {
+        fTqFactory.innerHTML = '<option value="">所有廠區</option>' + factories.map(f => `<option value="${f}">${f}</option>`).join('');
+        if(savedFilterFactoryVal && factories.includes(savedFilterFactoryVal)) {
+          fTqFactory.value = savedFilterFactoryVal;
+        }
+      }
+
+      // 觸發下拉連動渲染
       updateTqWorkerAndCheckerDropdowns();
       updateTqFilterDropdowns();
+      
+      // 3. 渲染最下方獨立管理後台的配置區域
+      renderTorqueAdminConfigHTML();
+      
+      // 4. 渲染數據列表
       renderTorqueList();
     });
   }
 
-  // 上方填寫控制台：依選取廠區連動「作業人員」與「查檢人員」
+  // 點擊新增全新自定義廠區
+  window.addNewTorqueFactory = () => {
+    const password = prompt("🚨 新增全新自訂廠區，請輸入專屬密碼:");
+    if (password !== "123456") { alert("密碼錯誤！"); return; }
+
+    const name = document.getElementById('newTqFactoryName').value.trim();
+    if(!name) { alert("請填寫廠區名稱！"); return; }
+
+    set(ref(db, `torque_v46_settings/${name}`), {
+      workers: "",
+      checkers: ""
+    }).then(() => {
+      alert(`🎉 廠區 [${name}] 已成功新增！您可以開始在下方設定專屬人員清單。`);
+      document.getElementById('newTqFactoryName').value = '';
+    });
+  };
+
+  // 點擊刪除某個廠區
+  window.deleteTorqueFactory = (factoryName) => {
+    const password = prompt(`🚨 警告！刪除[${factoryName}]將移除該廠區配置，請輸入確認密碼:`);
+    if (password !== "123456") { alert("密碼錯誤，拒絕刪除！"); return; }
+    
+    if(confirm(`確定要完全抹除 [${factoryName}] 及其人員配置設定嗎？`)) {
+      remove(ref(db, `torque_v46_settings/${factoryName}`)).then(() => {
+        alert(`🎉 廠區 [${factoryName}] 設定已成功自雲端刪除！`);
+      });
+    }
+  };
+
+  // 儲存單一廠區的作業人員或查檢人員清單
+  window.saveTorqueFactoryPersonnel = (factoryName, type) => {
+    const password = prompt(`🚨 修改 [${factoryName}] 的人員名單，請輸入驗證密碼:`);
+    if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
+
+    let val = "";
+    if(type === 'workers') val = document.getElementById(`adm_workers_${factoryName}`).value.trim();
+    if(type === 'checkers') val = document.getElementById(`adm_checkers_${factoryName}`).value.trim();
+
+    set(ref(db, `torque_v46_settings/${factoryName}/${type}`), val).then(() => {
+      alert(`🎉 [${factoryName}] 的專屬人員清單修改並儲存成功！已即時生效同步雲端。`);
+    });
+  };
+
+  // 渲染獨立後台內，各廠區的人員獨立配置框框
+  function renderTorqueAdminConfigHTML() {
+    const container = document.getElementById('torqueAdminConfigContainer');
+    if(!container) return;
+
+    let html = `<h4>各廠區人員名單精密編輯（請用英文逗號區隔）：</h4>`;
+    const entries = Object.entries(window.torqueFullSettings);
+    
+    if(entries.length === 0) {
+      html += `<div style="color: #64748b; font-size: 20px;">目前尚未建立任何自訂廠區，請使用上方欄位進行新增。</div>`;
+    } else {
+      entries.forEach(([factoryName, config]) => {
+        html += `
+          <div style="border: 2px dashed #000; background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="color: #0284c7; font-size: 24px;">🏭 廠區名稱：<b>${factoryName}</b></span>
+              <button class="btn-action" style="background: #fca5a5; margin: 0;" onclick="deleteTorqueFactory('${factoryName}')">🗑️ 刪除此廠區</button>
+            </div>
+            <div style="margin-bottom: 10px;">
+              <b>🛠️ 專屬「作業人員」名單：</b>
+              <input type="text" id="adm_workers_${factoryName}" value="${config.workers || ''}" placeholder="例: 張三,李四,王五">
+              <button class="btn-action" style="background: #67e8f9; font-size: 16px; padding: 6px 12px;" onclick="saveTorqueFactoryPersonnel('${factoryName}', 'workers')">儲存作業人員</button>
+            </div>
+            <div>
+              <b>🔍 專屬「查檢人員」名單：</b>
+              <input type="text" id="adm_checkers_${factoryName}" value="${config.checkers || ''}" placeholder="例: 趙組長,錢課長">
+              <button class="btn-action" style="background: #67e8f9; font-size: 16px; padding: 6px 12px;" onclick="saveTorqueFactoryPersonnel('${factoryName}', 'checkers')">儲存查檢人員</button>
+            </div>
+          </div>`;
+      });
+    }
+    container.innerHTML = html;
+  }
+
+  // 上方控制台：連動廠區變更人員與查檢名單
   window.updateTqWorkerAndCheckerDropdowns = () => {
     const factory = document.getElementById('tqFactorySelect').value;
     const wSelect = document.getElementById('tqWorkerSelect');
     const cSelect = document.getElementById('tqCheckerSelect');
     if(!wSelect || !cSelect) return;
 
-    const currentList = window.torqueLocalTeams[factory] || [];
-    if(currentList.length === 0) {
-      wSelect.innerHTML = '<option value="">該廠區目前無名單</option>';
-      cSelect.innerHTML = '<option value="">該廠區目前無名單</option>';
-    } else {
-      const optionsHtml = currentList.map(m => `<option value="${m}">${m}</option>`).join('');
-      wSelect.innerHTML = optionsHtml;
-      cSelect.innerHTML = optionsHtml;
+    if(!factory || !window.torqueFullSettings[factory]) {
+      wSelect.innerHTML = '<option value="">請先選擇廠區</option>';
+      cSelect.innerHTML = '<option value="">請先選擇廠區</option>';
+      return;
     }
+
+    const config = window.torqueFullSettings[factory];
+    const workersArr = (config.workers || "").split(',').map(m => m.trim()).filter(m => m);
+    const checkersArr = (config.checkers || "").split(',').map(m => m.trim()).filter(m => m);
+
+    wSelect.innerHTML = workersArr.length ? workersArr.map(m => `<option value="${m}">${m}</option>`).join('') : '<option value="">未設定作業人員</option>';
+    cSelect.innerHTML = checkersArr.length ? checkersArr.map(m => `<option value="${m}">${m}</option>`).join('') : '<option value="">未設定查檢人員</option>';
   };
 
-  // 中間篩選控制台：依選取廠區連動篩選下拉選單
+  // 中間篩選控制台：廠區連動篩選下拉選單
   window.updateTqFilterDropdowns = () => {
     const fFactory = document.getElementById('fTqFactory').value;
     const fwSelect = document.getElementById('fTqWorker');
     const fcSelect = document.getElementById('fTqChecker');
     if(!fwSelect || !fcSelect) return;
 
-    let targetList = [];
+    let allWorkers = [];
+    let allCheckers = [];
+
     if(!fFactory) {
-      // 顯示所有廠區人員總合
-      targetList = [...window.torqueLocalTeams["製造一廠"], ...window.torqueLocalTeams["製造二廠"]];
-    } else {
-      targetList = window.torqueLocalTeams[fFactory] || [];
+      // 撈取全廠區所有人做大聯動
+      Object.values(window.torqueFullSettings).forEach(config => {
+        (config.workers || "").split(',').forEach(m => { if(m.trim()) allWorkers.push(m.trim()); });
+        (config.checkers || "").split(',').forEach(m => { if(m.trim()) allCheckers.push(m.trim()); });
+      });
+    } else if(window.torqueFullSettings[fFactory]) {
+      const config = window.torqueFullSettings[fFactory];
+      allWorkers = (config.workers || "").split(',').map(m => m.trim()).filter(m => m);
+      allCheckers = (config.checkers || "").split(',').map(m => m.trim()).filter(m => m);
     }
-    // 去除重複
-    targetList = Array.from(new Set(targetList));
 
-    fwSelect.innerHTML = '<option value="">所有作業人員</option>' + targetList.map(m => `<option value="${m}">${m}</option>`).join('');
-    fcSelect.innerHTML = '<option value="">所有查檢人員</option>' + targetList.map(m => `<option value="${m}">${m}</option>`).join('');
-  };
+    allWorkers = Array.from(new Set(allWorkers));
+    allCheckers = Array.from(new Set(allCheckers));
 
-  // 本頁面最下方獨立後台儲存按鈕
-  window.saveTorqueAdminTeam = (factoryName) => {
-    const password = prompt(`🚨 儲存[${factoryName}]人員配置，請輸入獨立密碼:`);
-    if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
-
-    let inputVal = "";
-    if (factoryName === '製造一廠') inputVal = document.getElementById('tqAdminF1').value;
-    if (factoryName === '製造二廠') inputVal = document.getElementById('tqAdminF2').value;
-
-    set(ref(db, `torque_settings/teams/${factoryName}`), inputVal).then(() => {
-      alert(`🎉 [${factoryName}] 獨立名單修改並儲存成功！已即時發送至雲端。`);
-    }).catch(err => alert('儲存失敗: ' + err));
+    fwSelect.innerHTML = '<option value="">所有作業人員</option>' + allWorkers.map(m => `<option value="${m}">${m}</option>`).join('');
+    fcSelect.innerHTML = '<option value="">所有查檢人員</option>' + allCheckers.map(m => `<option value="${m}">${m}</option>`).join('');
   };
 
   window.clearTorqueFilters = () => {
@@ -843,7 +934,7 @@
     const photoFile = document.getElementById('tqPhotoFile').files[0];
 
     if(!order || !worker || !checker || !factory || !date || !checkContent) {
-      alert('⚠️ 所有查檢回報欄位（製令、作業、查檢、廠區、日期、抽查內容）皆為必填項目！');
+      alert('⚠️ 所有查檢回報欄位皆為必填項目，且廠區後台必須具備該選單人員！');
       return;
     }
 
@@ -880,7 +971,7 @@
       const rawData = snapshot.val() || {};
       let dataArray = [];
       for(let k in rawData) { dataArray.push(rawData[k]); }
-      dataArray.sort((a, b) => b.key - a.key); // 由新到舊呈現
+      dataArray.sort((a, b) => b.key - a.key);
 
       let filtered = dataArray.filter(item => {
         if(fOrder && (!item.order || !item.order.toLowerCase().includes(fOrder))) return false;
@@ -891,13 +982,15 @@
         return true;
       });
 
+      const factoryList = Object.keys(window.torqueFullSettings);
+
       let html = `<table class="skill-table">
         <tr>
-          <th style="width: 12%; text-align:center;">5. 廠區</th>
+          <th style="width: 13%; text-align:center;">5. 廠區</th>
           <th style="width: 11%; text-align:center;">3. 作業人員</th>
           <th style="width: 11%; text-align:center;">4. 查檢人員</th>
           <th style="width: 12%; text-align:center;">1. 製令</th>
-          <th style="width: 26%; text-align:left;">2. 抽查內容紀錄</th>
+          <th style="width: 25%; text-align:left;">2. 抽查內容紀錄</th>
           <th style="width: 11%; text-align:center;">6. 日期</th>
           <th style="width: 6%; text-align:center;">照片</th>
           <th style="width: 6%; text-align:center;">操作</th>
@@ -910,20 +1003,25 @@
           const k = item.key;
           const photoBtnClass = item.photo ? "btn-action btn-has-photo" : "btn-action";
           
-          // 格內直改下拉選單：依各廠區本地快取生成
-          const currentList = window.torqueLocalTeams[item.factory] || [];
-          const workerOptions = currentList.map(m => `<option value="${m}" ${item.worker===m?'selected':''}>${m}</option>`).join('');
-          const checkerOptions = currentList.map(m => `<option value="${m}" ${item.checker===m?'selected':''}>${m}</option>`).join('');
+          // 建立行內廠區下拉選單
+          const fOptions = factoryList.map(f => `<option value="${f}" ${item.factory===f?'selected':''}>${f}</option>`).join('');
+          
+          // 根據該行當前廠區動態計算人員選單
+          const currentConfig = window.torqueFullSettings[item.factory] || { workers: "", checkers: "" };
+          const curWorkers = (currentConfig.workers || "").split(',').map(m => m.trim()).filter(m => m);
+          const curCheckers = (currentConfig.checkers || "").split(',').map(m => m.trim()).filter(m => m);
+
+          const wOptions = curWorkers.map(m => `<option value="${m}" ${item.worker===m?'selected':''}>${m}</option>`).join('');
+          const cOptions = curCheckers.map(m => `<option value="${m}" ${item.checker===m?'selected':''}>${m}</option>`).join('');
 
           html += `<tr style="background:#ffffff;">
             <td>
               <select id="tq_inline_factory_${k}" class="table-input" style="text-align:center; padding:2px;" onchange="handleInlineFactoryChange('${k}')">
-                <option value="製造一廠" ${item.factory==='製造一廠'?'selected':''}>製造一廠</option>
-                <option value="製造二廠" ${item.factory==='製造二廠'?'selected':''}>製造二廠</option>
+                ${fOptions}
               </select>
             </td>
-            <td><select id="tq_inline_worker_${k}" class="table-input" style="text-align:center; padding:2px;">${workerOptions}</select></td>
-            <td><select id="tq_inline_checker_${k}" class="table-input" style="text-align:center; padding:2px;">${checkerOptions}</select></td>
+            <td><select id="tq_inline_worker_${k}" class="table-input" style="text-align:center; padding:2px;">${wOptions}</select></td>
+            <td><select id="tq_inline_checker_${k}" class="table-input" style="text-align:center; padding:2px;">${cOptions}</select></td>
             <td><input type="text" id="tq_inline_order_${k}" class="table-input" style="text-align:center;" value="${item.order || ''}"></td>
             <td><textarea id="tq_inline_content_${k}" class="table-input" rows="2" style="text-align:left; resize:vertical;">${item.checkContent || ''}</textarea></td>
             <td><input type="date" id="tq_inline_date_${k}" class="table-input" value="${item.date || ''}"></td>
@@ -944,17 +1042,19 @@
     });
   };
 
-  // 當使用者在表格內手動切換廠區時，該行的作業與查檢人員自動重構
+  // 當使用者在表格格子內直接改「廠區」時，該行的人員聯動即時重新渲染
   window.handleInlineFactoryChange = (key) => {
     const newFactory = document.getElementById(`tq_inline_factory_${key}`).value;
     const wSelect = document.getElementById(`tq_inline_worker_${key}`);
     const cSelect = document.getElementById(`tq_inline_checker_${key}`);
     if(!wSelect || !cSelect) return;
 
-    const currentList = window.torqueLocalTeams[newFactory] || [];
-    const optionsHtml = currentList.map(m => `<option value="${m}">${m}</option>`).join('');
-    wSelect.innerHTML = optionsHtml;
-    cSelect.innerHTML = optionsHtml;
+    const currentConfig = window.torqueFullSettings[newFactory] || { workers: "", checkers: "" };
+    const curWorkers = (currentConfig.workers || "").split(',').map(m => m.trim()).filter(m => m);
+    const curCheckers = (currentConfig.checkers || "").split(',').map(m => m.trim()).filter(m => m);
+
+    wSelect.innerHTML = curWorkers.map(m => `<option value="${m}">${m}</option>`).join('');
+    cSelect.innerHTML = curCheckers.map(m => `<option value="${m}">${m}</option>`).join('');
   };
 
   window.saveInlineTorque = (key, existingPhoto) => {
@@ -991,7 +1091,7 @@
     window.currentEditTqPhotoBase64 = photo;
 
     document.getElementById('tqFactorySelect').value = factory;
-    // 手動觸發下拉清單連動重繪，以便回填對應的名字
+    // 先強制連動一次上方的下拉選單
     updateTqWorkerAndCheckerDropdowns();
 
     document.getElementById('tqOrder').value = order;
