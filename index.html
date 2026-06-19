@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V47</title>
+  <title>員工評核系統 - V49</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 26px; font-weight: bold; }
     nav { width: 280px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; z-index: 100; }
@@ -47,13 +47,13 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260619-47</div>
+  <div class="version">版本: 20260619-49</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('skills')">📊 技能總表(⭐導師)</div>
   <div onclick="showPage('6s')">✅ 6S Check</div>
   <div onclick="showPage('performance')">📈 平日績效紀錄表</div>
-  <div onclick="showPage('torque')">📡 藍芽扭力查檢回報區</div>
+  <div onclick="showPage('torque')">📡 藍芽扭力回報區</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
 </nav>
 
@@ -157,9 +157,9 @@
         <div id="performanceListArea"></div>`;
       initPerformancePageData();
     } else if (page === 'torque') {
-      // V47 重新完美排序控制台：1.製令 ➔ 2.抽查內容 ➔ 3.作業人員 ➔ 4.查檢人員 ➔ 5.廠區 ➔ 6.日期
+      // V49 藍芽扭力回報區 精密排序控制台：1.製令 ➔ 2.抽查內容 ➔ 3.作業人員 ➔ 4.查檢人員 ➔ 5.廠區 ➔ 6.日期
       content.innerHTML = `
-        <h1>📡 藍芽扭力查檢回報區</h1>
+        <h1>📡 藍芽扭力回報區</h1>
         <div class="card" style="border-color: #0ea5e9;">
           <h3>➕ 新增 / 編輯查檢內容 (置頂控制台)</h3>
           <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
@@ -190,7 +190,7 @@
         <hr style="border: 2px dashed #0ea5e9; margin: 40px 0;">
         
         <div class="card" style="border: 4px solid #000; background: #f0f9ff;">
-          <h3>⚙️ 藍芽扭力查檢 獨立後台設定區</h3>
+          <h3>⚙️ 藍芽扭力 獨立後台設定區</h3>
           <div style="background: #fff; padding: 20px; border: 2px solid #000; border-radius: 8px; margin-bottom: 20px;">
             <h4>➕ 新增自定義廠區</h4>
             <div style="display: flex; gap: 15px;">
@@ -738,7 +738,7 @@
 
 
   // =========================================================================
-  // 📡 V47 藍芽扭力螺絲查檢回報區 (完美對齊指定順序：1製令➔2抽查➔3作業➔4查檢➔5廠區➔6日期)
+  // 📡 V49 藍芽扭力回報區 (完美對齊指定順序：1製令➔2抽查➔3作業➔4查檢➔5廠區➔6日期)
   // =========================================================================
 
   function initTorquePageData() {
@@ -904,7 +904,7 @@
   };
 
   window.saveTorqueRecord = () => {
-    const password = prompt("🚨 新增/修改藍芽扭力螺絲紀錄，請輸入查檢回報區專屬密碼:");
+    const password = prompt("🚨 新增/修改藍芽扭力紀錄，請輸入專屬驗證密碼:");
     if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
 
     const order = document.getElementById('tqOrder').value.trim();
@@ -927,7 +927,7 @@
       set(ref(db, `torque_records/${key}`), {
         key: parseInt(key), order, worker, checker, factory, date, checkContent, photo: compressedB64 || existingPhoto || ""
       }).then(() => {
-        alert('🎉 藍芽扭力螺絲查檢紀錄同步儲存成功！');
+        alert('🎉 藍芽扭力紀錄同步儲存成功！');
         window.currentEditTqKey = null; window.currentEditTqPhotoBase64 = null;
         document.getElementById('tqOrder').value = '';
         document.getElementById('tqCheckContent').value = '';
@@ -939,7 +939,7 @@
     if(photoFile) { compressImg(photoFile, (b64) => { processSave(b64); }); } else { processSave(null); }
   };
 
-  // V47 歷史紀錄表格：1.製令 ➔ 2.抽查內容紀錄 ➔ 3.作業人員 ➔ 4.查檢人員 ➔ 5.廠區 ➔ 6.日期 ➔ 照片 ➔ 操作
+  // V49 歷史紀錄表格：1.製令 ➔ 2.抽查內容紀錄 ➔ 3.作業人員 ➔ 4.查檢人員 ➔ 5.廠區 ➔ 6.日期 ➔ 照片 ➔ 操作
   window.renderTorqueList = () => {
     const listArea = document.getElementById('torqueListArea');
     if(!listArea) return;
@@ -1055,7 +1055,7 @@
       set(ref(db, `torque_records/${key}`), {
         key: parseInt(key), order: uOrder, checkContent: uContent, worker: uWorker, checker: uChecker, factory: uFactory, date: uDate, photo: b64 || existingPhoto || ""
       }).then(() => {
-        alert('🎉 藍芽扭力螺絲紀錄更新成功！');
+        alert('🎉 藍芽扭力紀錄更新成功！');
         renderTorqueList();
       }).catch(err => alert('同步失敗: ' + err));
     };
@@ -1085,7 +1085,7 @@
   window.deleteTorqueRecord = (key) => {
     const password = prompt("🚨 警告：此項目將從資料庫中永久抹除，請輸入確認密碼:");
     if (password !== "123456") { alert("密碼錯誤，刪除無效！"); return; }
-    if(confirm('確定要永久刪除此筆藍芽扭力螺絲查檢紀錄嗎？')) {
+    if(confirm('確定要永久刪除此筆藍芽扭力紀錄嗎？')) {
       remove(ref(db, `torque_records/${key}`)).then(() => { alert('資料已成功自雲端刪除！'); renderTorqueList(); });
     }
   };
