@@ -2,10 +2,10 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V43</title>
+  <title>員工評核系統 - V44</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 24px; font-weight: bold; }
-    nav { width: 260px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; }
+    nav { width: 260px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; z-index: 100; }
     nav div { padding: 18px; cursor: pointer; border-bottom: 1px solid #cbd5e1; font-weight: bold; font-size: 22px; }
     nav div:hover { background: #cbd5e1; }
     main { flex: 1; padding: 40px; margin-left: 260px; }
@@ -37,7 +37,7 @@
     /* 有照片特別顯示樣式 */
     .btn-has-photo { border: 4px dashed #ff00ff !important; background: #f5d0fe !important; font-weight: 900 !important; }
 
-    /* 6S 表格寬度與縮小按鈕 */
+    /* 表格欄位寬度與縮小按鈕 */
     .col-cat { width: 70px !important; text-align: center !important; }
     .col-score { width: 60px !important; text-align: center !important; }
     .col-action { width: 110px !important; text-align: center !important; }
@@ -47,12 +47,13 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260614-43</div>
+  <div class="version">版本: 20260619-44</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('skills')">📊 技能總表(⭐導師)</div>
   <div onclick="showPage('6s')">✅ 6S Check</div>
   <div onclick="showPage('performance')">📈 平日績效紀錄表</div>
+  <div onclick="showPage('torque')">🔧 藍芽扭力螺絲查檢回報區</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
 </nav>
 
@@ -69,6 +70,12 @@
   }));
 
   window.currentEditData = null;
+  window.currentEditPfKey = null;
+  window.currentEditPfPhotoBase64 = null;
+  
+  // 49. 藍芽扭力專用全域變數
+  window.currentEditTqKey = null;
+  window.currentEditTqPhotoBase64 = null;
   
   const categoryColors = { 
     "整理": "#ffdee2", "整頓": "#e0f2fe", "清掃": "#fff7ed", "清潔": "#dcfce7", "作法": "#fef08a", "紀律": "#fed7aa", "素養": "#f3e8ff", "安全": "#fee2e2" 
@@ -104,6 +111,17 @@
     if (s.val()) { globalSymbols = s.val(); }
   });
 
+  // 全域取得目前所有後台建立之員工名單陣列，供 49 項下拉選單共用
+  let globalAllMembers = [];
+  onValue(ref(db, 'teams'), (snapshot) => {
+    const teamsData = snapshot.val() || {};
+    let uniqueMembers = new Set();
+    Object.values(teamsData).forEach(str => {
+      str.split(',').forEach(m => { if(m.trim()) uniqueMembers.add(m.trim()); });
+    });
+    globalAllMembers = Array.from(uniqueMembers);
+  });
+
   window.showPage = (page) => {
     const content = document.getElementById('content');
     window.currentEditData = null; 
@@ -119,7 +137,6 @@
         </div>
         <div id="sixSList"></div><hr><div id="sixSContainer"></div>`;
     } else if (page === 'performance') {
-      // 46. 進入畫面不要求輸入密碼
       content.innerHTML = `
         <h1>📈 平日績效紀錄表</h1>
         <div class="card" style="border-color: #4f46e5;">
@@ -150,6 +167,38 @@
         </div>
         <div id="performanceListArea"></div>`;
       initPerformancePageData();
+    } else if (page === 'torque') {
+      // 49. 藍芽扭力螺絲查檢回報區 介面渲染
+      content.innerHTML = `
+        <h1>🔧 藍芽扭力螺絲查檢回報區</h1>
+        <div class="card" style="border-color: #0ea5e9;">
+          <h3>➕ 新增 / 編輯查檢內容 (置頂控制台)</h3>
+          <div style="display: flex; gap: 15px; margin-bottom: 10px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">1. 製令：<input type="text" id="tqOrder" placeholder="請輸入製令單號"></div>
+            <div style="flex: 1; min-width: 200px;">3. 作業人員：<select id="tqWorkerSelect"><option value="">請選擇作業人員</option></select></div>
+            <div style="flex: 1; min-width: 200px;">4. 查檢人員：<select id="tqCheckerSelect"><option value="">請選擇查檢人員</option></select></div>
+          </div>
+          <div style="display: flex; gap: 15px; margin-bottom: 10px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">5. 廠區：<select id="tqFactorySelect"><option value="製造一廠">製造一廠</option><option value="製造二廠">製造二廠</option></select></div>
+            <div style="flex: 1; min-width: 200px;">6. 日期：<input type="date" id="tqDate"></div>
+          </div>
+          <div style="margin-bottom: 10px;">2. 填寫抽查內容：<textarea id="tqCheckContent" placeholder="請詳細填寫藍芽扭力螺絲之抽查內容紀錄..." rows="2" style="text-align: left; font-weight: bold; color: #000;"></textarea></div>
+          <div style="margin: 15px 0; font-size: 20px;">查檢證明照片：<input type="file" id="tqPhotoFile" accept="image/*"></div>
+          <button class="btn" style="background: #0ea5e9;" onclick="saveTorqueRecord()">💾 儲存並發送雲端</button>
+        </div>
+        <div class="card" style="background: #f1f5f9; border-color: #000;">
+          <h3>🔍 即時複合條件篩選看板</h3>
+          <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="fTqOrder" placeholder="關鍵字篩選製令" style="width: auto; min-width: 180px;" oninput="renderTorqueList()">
+            <select id="fTqWorker" style="width: auto; min-width: 180px;" onchange="renderTorqueList()"><option value="">所有作業人員</option></select>
+            <select id="fTqChecker" style="width: auto; min-width: 180px;" onchange="renderTorqueList()"><option value="">所有查檢人員</option></select>
+            <select id="fTqFactory" style="width: auto; min-width: 180px;" onchange="renderTorqueList()"><option value="">所有廠區</option><option value="製造一廠">製造一廠</option><option value="製造二廠">製造二廠</option></select>
+            <input type="date" id="fTqDate" style="width: auto; min-width: 180px;" onchange="renderTorqueList()">
+            <button class="btn" style="background: #64748b; padding: 10px 16px; font-size: 18px;" onclick="clearTorqueFilters()">重置篩選</button>
+          </div>
+        </div>
+        <div id="torqueListArea"></div>`;
+      initTorquePageData();
     } else if (page === 'admin') {
       const password = prompt("請輸入管理員密碼:");
       if (password !== "0000") { alert("密碼錯誤！"); return; }
@@ -460,7 +509,7 @@
   };
 
   // ==========================================
-  // 📈 平日績效紀錄表 核心邏輯 (含第48項升級)
+  // 📈 平日績效紀錄表 核心邏輯
   // ==========================================
 
   function initPerformancePageData() {
@@ -573,8 +622,6 @@
         filteredData.forEach(item => {
           const k = item.key;
           const photoBtnClass = item.photo ? "btn-action btn-has-photo" : "btn-action";
-          
-          // 48. 核心修改：同組長的組員顯示相同專屬底色，不再依照分數變綠或變紅
           const bgStyle = `background: ${getLeaderColor(item.leader)};`;
 
           html += `<tr style="${bgStyle}">
@@ -653,7 +700,6 @@
     if(confirm('確定要永久刪除此筆平日績效紀錄嗎？')) { remove(ref(db, `performance_records/${key}`)).then(() => { alert('資料已成功自雲端刪除！'); renderPerformance(); }); }
   };
 
-  // 48. 新增：平日績效 CSV 檔案下載邏輯
   window.downloadPerformanceCSV = () => {
     const filterL = document.getElementById('filterLeader').value;
     const filterM = document.getElementById('filterMember').value;
@@ -686,6 +732,203 @@
       link.setAttribute("download", `平日績效紀錄報表_${Date.now()}.csv`);
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }, { onlyOnce: true });
+  };
+
+
+  // =========================================================================
+  // 🔧 49. 藍芽扭力螺絲查檢回報區 核心邏輯架構 (密碼: 123456，後台位於最尾端)
+  // =========================================================================
+
+  function initTorquePageData() {
+    const today = new Date().toISOString().split('T')[0];
+    const dateInput = document.getElementById('tqDate');
+    if(dateInput) dateInput.value = today;
+
+    // 將後台的所有員工名單動態綁定到作業、查檢、篩選選單
+    const wSelect = document.getElementById('tqWorkerSelect');
+    const cSelect = document.getElementById('tqCheckerSelect');
+    const fwSelect = document.getElementById('fTqWorker');
+    const fcSelect = document.getElementById('fTqChecker');
+
+    if(wSelect) wSelect.innerHTML = '<option value="">請選擇作業人員</option>' + globalAllMembers.map(m => `<option value="${m}">${m}</option>`).join('');
+    if(cSelect) cSelect.innerHTML = '<option value="">請選擇查檢人員</option>' + globalAllMembers.map(m => `<option value="${m}">${m}</option>`).join('');
+    if(fwSelect) fwSelect.innerHTML = '<option value="">所有作業人員</option>' + globalAllMembers.map(m => `<option value="${m}">${m}</option>`).join('');
+    if(fcSelect) fcSelect.innerHTML = '<option value="">所有查檢人員</option>' + globalAllMembers.map(m => `<option value="${m}">${m}</option>`).join('');
+
+    renderTorqueList();
+  }
+
+  window.clearTorqueFilters = () => {
+    document.getElementById('fTqOrder').value = '';
+    document.getElementById('fTqWorker').value = '';
+    document.getElementById('fTqChecker').value = '';
+    document.getElementById('fTqFactory').value = '';
+    document.getElementById('fTqDate').value = '';
+    renderTorqueList();
+  };
+
+  window.saveTorqueRecord = () => {
+    const password = prompt("🚨 新增/修改藍芽扭力螺絲紀錄，請輸入查檢回報區專屬密碼:");
+    if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
+
+    const order = document.getElementById('tqOrder').value.trim();
+    const worker = document.getElementById('tqWorkerSelect').value;
+    const checker = document.getElementById('tqCheckerSelect').value;
+    const factory = document.getElementById('tqFactorySelect').value;
+    const date = document.getElementById('tqDate').value;
+    const checkContent = document.getElementById('tqCheckContent').value.trim();
+    const photoFile = document.getElementById('tqPhotoFile').files[0];
+
+    if(!order || !worker || !checker || !factory || !date || !checkContent) {
+      alert('⚠️ 所有查檢回報欄位（製令、作業、查檢、廠區、日期、抽查內容）皆為必填項目！');
+      return;
+    }
+
+    const key = window.currentEditTqKey || Date.now();
+    const existingPhoto = window.currentEditTqPhotoBase64 || "";
+
+    const processSave = (compressedB64) => {
+      set(ref(db, `torque_records/${key}`), {
+        key: parseInt(key), order, worker, checker, factory, date, checkContent, photo: compressedB64 || existingPhoto || ""
+      }).then(() => {
+        alert('🎉 藍芽扭力螺絲查檢紀錄同步儲存成功！');
+        window.currentEditTqKey = null; window.currentEditTqPhotoBase64 = null;
+        document.getElementById('tqOrder').value = '';
+        document.getElementById('tqCheckContent').value = '';
+        document.getElementById('tqPhotoFile').value = '';
+        renderTorqueList();
+      }).catch(err => alert('發送雲端失敗: ' + err));
+    };
+
+    if(photoFile) { compressImg(photoFile, (b64) => { processSave(b64); }); } else { processSave(null); }
+  };
+
+  window.renderTorqueList = () => {
+    const listArea = document.getElementById('torqueListArea');
+    if(!listArea) return;
+
+    const fOrder = document.getElementById('fTqOrder').value.trim().toLowerCase();
+    const fWorker = document.getElementById('fTqWorker').value;
+    const fChecker = document.getElementById('fTqChecker').value;
+    const fFactory = document.getElementById('fTqFactory').value;
+    const fDate = document.getElementById('fTqDate').value;
+
+    onValue(ref(db, 'torque_records'), (snapshot) => {
+      const rawData = snapshot.val() || {};
+      let dataArray = [];
+      for(let k in rawData) { dataArray.push(rawData[k]); }
+      dataArray.sort((a, b) => b.key - a.key); // 由新到舊呈現
+
+      let filtered = dataArray.filter(item => {
+        if(fOrder && (!item.order || !item.order.toLowerCase().includes(fOrder))) return false;
+        if(fWorker && item.worker !== fWorker) return false;
+        if(fChecker && item.checker !== fChecker) return false;
+        if(fFactory && item.factory !== fFactory) return false;
+        if(fDate && item.date !== fDate) return false;
+        return true;
+      });
+
+      let html = `<table class="skill-table">
+        <tr>
+          <th style="width: 12%; text-align:center;">1. 製令</th>
+          <th style="width: 32%; text-align:left;">2. 抽查內容紀錄</th>
+          <th style="width: 11%; text-align:center;">3. 作業人員</th>
+          <th style="width: 11%; text-align:center;">4. 查檢人員</th>
+          <th style="width: 11%; text-align:center;">5. 廠區</th>
+          <th style="width: 11%; text-align:center;">6. 日期</th>
+          <th style="width: 6%; text-align:center;">照片</th>
+          <th style="width: 6%; text-align:center;">操作</th>
+        </tr>`;
+
+      if(filtered.length === 0) {
+        html += `<tr><td colspan="8" style="text-align:center; color:#94a3b8;">目前尚無符合篩選條件的扭力螺絲查檢紀錄。</td></tr>`;
+      } else {
+        filtered.forEach(item => {
+          const k = item.key;
+          const photoBtnClass = item.photo ? "btn-action btn-has-photo" : "btn-action";
+          
+          // 選單動態代入格子
+          const workerOptions = globalAllMembers.map(m => `<option value="${m}" ${item.worker===m?'selected':''}>${m}</option>`).join('');
+          const checkerOptions = globalAllMembers.map(m => `<option value="${m}" ${item.checker===m?'selected':''}>${m}</option>`).join('');
+
+          html += `<tr style="background:#ffffff;">
+            <td><input type="text" id="tq_inline_order_${k}" class="table-input" style="text-align:center;" value="${item.order || ''}"></td>
+            <td><textarea id="tq_inline_content_${k}" class="table-input" rows="2" style="text-align:left; resize:vertical;">${item.checkContent || ''}</textarea></td>
+            <td><select id="tq_inline_worker_${k}" class="table-input" style="text-align:center; padding:2px;">${workerOptions}</select></td>
+            <td><select id="tq_inline_checker_${k}" class="table-input" style="text-align:center; padding:2px;">${checkerOptions}</select></td>
+            <td>
+              <select id="tq_inline_factory_${k}" class="table-input" style="text-align:center; padding:2px;">
+                <option value="製造一廠" ${item.factory==='製造一廠'?'selected':''}>製造一廠</option>
+                <option value="製造二廠" ${item.factory==='製造二廠'?'selected':''}>製造二廠</option>
+              </select>
+            </td>
+            <td><input type="date" id="tq_inline_date_${k}" class="table-input" value="${item.date || ''}"></td>
+            <td style="text-align:center;">
+              ${item.photo ? `<button class="${photoBtnClass}" style="padding:4px 8px; font-size:16px;" onclick="viewImg('${item.photo}')">📷</button>` : '<span style="font-size:14px;color:#94a3b8;">無</span>'}
+              <input type="file" id="tq_inline_file_${k}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
+            </td>
+            <td style="text-align:center;">
+              <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:3px auto; padding:4px!" onclick="saveInlineTorque('${k}', '${item.photo || ''}')" title="同步格子內容">💾</button>
+              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:3px auto; padding:4px!" onclick="loadToTopTorqueEditor('${k}', '${item.order}', '${item.worker}', '${item.checker}', '${item.factory}', '${item.date}', \`${item.checkContent || ''}\`, '${item.photo || ''}')" title="拉回上方修改">✏️</button>
+              <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:3px auto; padding:4px!" onclick="deleteTorqueRecord('${k}')" title="刪除紀錄">🗑️</button>
+            </td>
+          </tr>`;
+        });
+      }
+      html += `</table>`;
+      listArea.innerHTML = html;
+    });
+  };
+
+  window.saveInlineTorque = (key, existingPhoto) => {
+    const password = prompt("🚨 格子直改儲存程式，請輸入密碼驗證:");
+    if (password !== "123456") { alert("密碼錯誤，拒絕儲存變更！"); return; }
+
+    const uOrder = document.getElementById(`tq_inline_order_${key}`).value.trim();
+    const uContent = document.getElementById(`tq_inline_content_${key}`).value.trim();
+    const uWorker = document.getElementById(`tq_inline_worker_${key}`).value;
+    const uChecker = document.getElementById(`tq_inline_checker_${key}`).value;
+    const uFactory = document.getElementById(`tq_inline_factory_${key}`).value;
+    const uDate = document.getElementById(`tq_inline_date_${key}`).value;
+    const fileEl = document.getElementById(`tq_inline_file_${key}`).files[0];
+
+    if(!uOrder || !uContent || !uWorker || !uChecker || !uFactory || !uDate) { alert('查檢資料各欄位皆不允許空白！'); return; }
+
+    const performUpdate = (b64) => {
+      set(ref(db, `torque_records/${key}`), {
+        key: parseInt(key), order: uOrder, checkContent: uContent, worker: uWorker, checker: uChecker, factory: uFactory, date: uDate, photo: b64 || existingPhoto || ""
+      }).then(() => {
+        alert('🎉 該列藍芽扭力螺絲紀錄內容已在格子內直改更新成功！');
+        renderTorqueList();
+      }).catch(err => alert('同步失敗: ' + err));
+    };
+
+    if(fileEl) { compressImg(fileEl, (compressed) => { performUpdate(compressed); }); } else { performUpdate(null); }
+  };
+
+  window.loadToTopTorqueEditor = (key, order, worker, checker, factory, date, checkContent, photo) => {
+    const password = prompt("🚨 拉回上方控制台編輯程序，請輸入密碼:");
+    if (password !== "123456") { alert("密碼錯誤，拒絕載入！"); return; }
+
+    window.currentEditTqKey = key;
+    window.currentEditTqPhotoBase64 = photo;
+
+    document.getElementById('tqOrder').value = order;
+    document.getElementById('tqWorkerSelect').value = worker;
+    document.getElementById('tqCheckerSelect').value = checker;
+    document.getElementById('tqFactorySelect').value = factory;
+    document.getElementById('tqDate').value = date;
+    document.getElementById('tqCheckContent').value = checkContent;
+
+    alert('📍 該筆資料已順利載入最上方回報區控制台！請於上方進行精密調整後儲存。');
+  };
+
+  window.deleteTorqueRecord = (key) => {
+    const password = prompt("🚨 警告：此項目將從資料庫中永久抹除，請輸入確認密碼:");
+    if (password !== "123456") { alert("密碼錯誤，刪除無效！"); return; }
+    if(confirm('確定要永久刪除此筆藍芽扭力螺絲查檢紀錄嗎？')) {
+      remove(ref(db, `torque_records/${key}`)).then(() => { alert('資料已成功自雲端刪除！'); renderTorqueList(); });
+    }
   };
 
   showPage('home');
