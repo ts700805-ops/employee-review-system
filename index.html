@@ -2,28 +2,28 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V46</title>
+  <title>員工評核系統 - V47</title>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 24px; font-weight: bold; }
-    nav { width: 260px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; z-index: 100; }
-    nav div { padding: 18px; cursor: pointer; border-bottom: 1px solid #cbd5e1; font-weight: bold; font-size: 22px; }
+    body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 26px; font-weight: bold; }
+    nav { width: 280px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; z-index: 100; }
+    nav div { padding: 18px; cursor: pointer; border-bottom: 1px solid #cbd5e1; font-weight: bold; font-size: 24px; }
     nav div:hover { background: #cbd5e1; }
-    main { flex: 1; padding: 40px; margin-left: 260px; }
+    main { flex: 1; padding: 40px; margin-left: 280px; }
     .card { background: white; padding: 30px; border-radius: 15px; margin-bottom: 25px; border: 3px solid #000; color: #000; }
-    .card h3 { font-size: 26px; font-weight: bold; margin-top: 0; color: #000; }
-    .btn { padding: 12px 24px; cursor: pointer; background: #4f46e5; color: white; border: 3px solid #000; border-radius: 8px; font-weight: bold; font-size: 22px; }
-    .btn-action { padding: 10px 16px; margin: 4px; cursor: pointer; border-radius: 5px; border: 2px solid #000; font-weight: bold; font-size: 18px; color: #000; }
-    input, select, textarea { padding: 12px; margin: 8px 0; border: 3px solid #000; border-radius: 8px; width: 100%; font-size: 22px; font-weight: bold; color: #000; background: #fff; box-sizing: border-box; }
+    .card h3 { font-size: 28px; font-weight: bold; margin-top: 0; color: #000; }
+    .btn { padding: 14px 28px; cursor: pointer; background: #4f46e5; color: white; border: 3px solid #000; border-radius: 8px; font-weight: bold; font-size: 24px; }
+    .btn-action { padding: 10px 16px; margin: 4px; cursor: pointer; border-radius: 5px; border: 2px solid #000; font-weight: bold; font-size: 20px; color: #000; }
+    input, select, textarea { padding: 14px; margin: 8px 0; border: 3px solid #000; border-radius: 8px; width: 100%; font-size: 24px; font-weight: bold; color: #000; background: #fff; box-sizing: border-box; }
     
-    /* 表格內輸入框、文字域優化 */
-    .table-input { font-size: 20px; font-weight: bold; color: #000; background: rgba(255,255,255,0.75); border: 2px solid #000; margin: 0; padding: 6px; width: 100%; }
+    /* 表格內輸入框、下拉選單、文字域字體加大 */
+    .table-input { font-size: 24px; font-weight: bold; color: #000; background: rgba(255,255,255,0.75); border: 2px solid #000; margin: 0; padding: 8px; width: 100%; }
     
     .version { font-size: 18px; color: #475569; margin-bottom: 20px; font-weight: bold; }
-    .skill-table { width: 100%; border-collapse: collapse; margin-top: 25px; background: white; border: 3px solid #000; font-size: 22px; }
-    .skill-table th, .skill-table td { border: 3px solid #000; padding: 12px; text-align: left; color: #000; font-weight: bold; }
-    .skill-table th { background: #cbd5e1; text-align: center; font-size: 24px; }
+    .skill-table { width: 100%; border-collapse: collapse; margin-top: 25px; background: white; border: 3px solid #000; font-size: 24px; }
+    .skill-table th, .skill-table td { border: 3px solid #000; padding: 14px; text-align: left; color: #000; font-weight: bold; }
+    .skill-table th { background: #cbd5e1; text-align: center; font-size: 26px; }
     .gradient-bg { background: linear-gradient(135deg, #e9d5ff, #f5d0fe); color: #000; padding: 40px; border-radius: 20px; border: 3px solid #a855f7; }
-    .eval-card { display: inline-block; width: 240px; text-align: center; padding: 20px; border: 3px solid #000; border-radius: 15px; margin: 10px; background: white; color: #000; }
+    .eval-card { display: inline-block; width: 260px; text-align: center; padding: 20px; border: 3px solid #000; border-radius: 15px; margin: 10px; background: white; color: #000; }
     
     /* 圓形進度條樣式 */
     .circle-progress { width: 130px; height: 130px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 15px auto; font-size: 30px; color: #000; font-weight: 900; box-sizing: border-box; }
@@ -37,23 +37,23 @@
     /* 有照片特別顯示樣式 */
     .btn-has-photo { border: 4px dashed #ff00ff !important; background: #f5d0fe !important; font-weight: 900 !important; }
 
-    /* 表格欄位寬度與縮小按鈕 */
-    .col-cat { width: 70px !important; text-align: center !important; }
-    .col-score { width: 60px !important; text-align: center !important; }
-    .col-action { width: 110px !important; text-align: center !important; }
-    .btn-action-sm { padding: 6px 10px !important; font-size: 18px !important; margin: 2px !important; display: inline-block; }
+    /* 表格欄位寬度與操作按鈕優化 */
+    .col-cat { width: 80px !important; text-align: center !important; }
+    .col-score { width: 70px !important; text-align: center !important; }
+    .col-action { width: 120px !important; text-align: center !important; }
+    .btn-action-sm { padding: 8px 12px !important; font-size: 22px !important; margin: 3px !important; display: inline-block; }
   </style>
 </head>
 <body>
 
 <nav>
-  <div class="version">版本: 20260619-46</div>
+  <div class="version">版本: 20260619-47</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('skills')">📊 技能總表(⭐導師)</div>
   <div onclick="showPage('6s')">✅ 6S Check</div>
   <div onclick="showPage('performance')">📈 平日績效紀錄表</div>
-  <div onclick="showPage('torque')">📡⚙️ 藍芽扭力查檢回報區</div>
+  <div onclick="showPage('torque')">📡 藍芽扭力查檢回報區</div>
   <div onclick="showPage('admin')">⚙️ 管理後台</div>
 </nav>
 
@@ -140,7 +140,7 @@
             <div style="flex: 1;">記錄人員：<input type="text" id="pfRecorder" placeholder="請輸入名字"></div>
           </div>
           <div style="margin-bottom: 10px;">內容說明敘述：<textarea id="pfContentDesc" placeholder="請填寫具體加減分之內容說明事由..." rows="2" style="text-align: left; font-weight: bold; color: #000;"></textarea></div>
-          <div style="margin: 15px 0; font-size: 20px;">表現證明照片：<input type="file" id="pfPhotoFile" accept="image/*"></div>
+          <div style="margin: 15px 0; font-size: 22px;">表現證明照片：<input type="file" id="pfPhotoFile" accept="image/*"></div>
           <button class="btn" style="background: #4f46e5;" onclick="savePerformanceRecord()">💾 儲存並發送雲端</button>
         </div>
         <div class="card" style="background: #f1f5f9; border-color: #000;">
@@ -149,7 +149,7 @@
             <select id="filterLeader" style="width: auto; min-width: 200px;" onchange="updateFilterMemberSelect()"><option value="">篩選所有組長</option></select>
             <select id="filterMember" style="width: auto; min-width: 200px;" onchange="renderPerformance()"><option value="">篩選所有組員</option></select>
             <button class="btn" style="background: #10b981; padding: 10px 20px;" onclick="downloadPerformanceCSV()">📊 匯出績效 CSV 檔</button>
-            <div id="summaryScoreBadge" style="font-size: 24px; background: #fef08a; padding: 10px 20px; border: 3px solid #000; border-radius: 8px; margin-left: auto;">
+            <div id="summaryScoreBadge" style="font-size: 26px; background: #fef08a; padding: 10px 20px; border: 3px solid #000; border-radius: 8px; margin-left: auto;">
               選定人員總得分：<span id="summaryScoreVal" style="color: #ef4444; font-weight: 900;">0</span> 分
             </div>
           </div>
@@ -157,22 +157,22 @@
         <div id="performanceListArea"></div>`;
       initPerformancePageData();
     } else if (page === 'torque') {
-      // V46 全面重組藍芽扭力查檢回報區：完美自定義廠區與自定義查檢/作業人員後台
+      // V47 重新完美排序控制台：1.製令 ➔ 2.抽查內容 ➔ 3.作業人員 ➔ 4.查檢人員 ➔ 5.廠區 ➔ 6.日期
       content.innerHTML = `
-        <h1>📡⚙️ 藍芽扭力查檢回報區</h1>
+        <h1>📡 藍芽扭力查檢回報區</h1>
         <div class="card" style="border-color: #0ea5e9;">
           <h3>➕ 新增 / 編輯查檢內容 (置頂控制台)</h3>
-          <div style="display: flex; gap: 15px; margin-bottom: 10px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px;">1. 製令：<input type="text" id="tqOrder" placeholder="請輸入製令單號"></div>
+            <div style="flex: 2; min-width: 400px;">2. 填寫抽查內容：<input type="text" id="tqCheckContent" placeholder="請詳細填寫藍芽扭力螺絲之抽查內容紀錄..."></div>
+          </div>
+          <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 200px;">5. 廠區：<select id="tqFactorySelect" onchange="updateTqWorkerAndCheckerDropdowns()"><option value="">請選擇廠區</option></select></div>
             <div style="flex: 1; min-width: 200px;">3. 作業人員：<select id="tqWorkerSelect"><option value="">請先選擇廠區</option></select></div>
             <div style="flex: 1; min-width: 200px;">4. 查檢人員：<select id="tqCheckerSelect"><option value="">請先選擇廠區</option></select></div>
-          </div>
-          <div style="display: flex; gap: 15px; margin-bottom: 10px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 200px;">1. 製令：<input type="text" id="tqOrder" placeholder="請輸入製令單號"></div>
             <div style="flex: 1; min-width: 200px;">6. 日期：<input type="date" id="tqDate"></div>
           </div>
-          <div style="margin-bottom: 10px;">2. 填寫抽查內容：<textarea id="tqCheckContent" placeholder="請詳細填寫藍芽扭力螺絲之抽查內容紀錄..." rows="2" style="text-align: left; font-weight: bold; color: #000;"></textarea></div>
-          <div style="margin: 15px 0; font-size: 20px;">查檢證明照片：<input type="file" id="tqPhotoFile" accept="image/*"></div>
+          <div style="margin: 15px 0; font-size: 24px;">查檢證明照片：<input type="file" id="tqPhotoFile" accept="image/*"></div>
           <button class="btn" style="background: #0ea5e9;" onclick="saveTorqueRecord()">💾 儲存並發送雲端</button>
         </div>
         <div class="card" style="background: #f1f5f9; border-color: #000;">
@@ -183,7 +183,7 @@
             <select id="fTqWorker" style="width: auto; min-width: 180px;" onchange="renderTorqueList()"><option value="">所有作業人員</option></select>
             <select id="fTqChecker" style="width: auto; min-width: 180px;" onchange="renderTorqueList()"><option value="">所有查檢人員</option></select>
             <input type="date" id="fTqDate" style="width: auto; min-width: 180px;" onchange="renderTorqueList()">
-            <button class="btn" style="background: #64748b; padding: 10px 16px; font-size: 18px;" onclick="clearTorqueFilters()">重置篩選</button>
+            <button class="btn" style="background: #64748b; padding: 10px 16px; font-size: 20px;" onclick="clearTorqueFilters()">重置篩選</button>
           </div>
         </div>
         <div id="torqueListArea"></div>
@@ -216,7 +216,7 @@
         </div>
         <div class="card"><h3>👥 員工配置</h3><input type="text" id="ln" placeholder="組長名稱"><input type="text" id="ml" placeholder="組員名稱(逗號分隔)"><button class="btn" onclick="addTeam()">儲存新組別</button><hr><div id="teamList"></div></div>
         <div class="card"><h3>🛠️ 技能設定</h3><select id="sLeaderSelect" onchange="updateMemberSelect()"><option value="">選擇組長</option></select><select id="sMemberSelect"><option value="">請先選擇組長</option></select>
-        <div style="margin: 10px 0; font-size:20px;">
+        <div style="margin: 10px 0; font-size:22px;">
           技能類型：
           <label><input type="radio" name="skillType" value="normal" checked style="width:auto; margin-right:5px;">一般技能</label>
           <label><input type="radio" name="skillType" value="master" style="width:auto; margin-left:20px; margin-right:5px;">技能導師</label>
@@ -321,8 +321,8 @@
       <input type="number" id="score" placeholder="評分">
       <textarea id="note" placeholder="現況說明"></textarea> 
       <textarea id="improve" placeholder="改善方式"></textarea>
-      <div style="margin:15px 0; font-size:20px;">善前照片: <input type="file" id="beforeImg" accept="image/*"></div>
-      <div style="margin:15px 0; font-size:20px;">善後照片: <input type="file" id="afterImg" accept="image/*"></div>
+      <div style="margin:15px 0; font-size:22px;">善前照片: <input type="file" id="beforeImg" accept="image/*"></div>
+      <div style="margin:15px 0; font-size:22px;">善後照片: <input type="file" id="afterImg" accept="image/*"></div>
       <button class="btn" style="background:#ef4444" onclick="save6S('${unit}')">新增一筆紀錄</button></div>`;
   };
 
@@ -417,7 +417,7 @@
             <div>👤 ${m.trim()}</div>
             <div class="${getProgressClass(score)}"><span>${score}</span></div>
             <select id="s_${m.trim()}">${['0%','20%','40%','60%','80%','100%'].map(v=>`<option value="${v}" ${score==v?'selected':''}>${v}</option>`).join('')}</select>
-            <button class="btn" style="margin-top:10px; padding:6px 12px; font-size:16px;" onclick="saveScore('${leader}','${m.trim()}')">儲存歷史</button>
+            <button class="btn" style="margin-top:10px; padding:6px 12px; font-size:18px;" onclick="saveScore('${leader}','${m.trim()}')">儲存歷史</button>
           </div>`;
         });
         document.getElementById('evalArea').innerHTML = html;
@@ -634,7 +634,7 @@
             <td><textarea id="pf_inline_desc_${k}" class="table-input" rows="2" style="text-align:left; resize:vertical;">${item.contentDesc || ''}</textarea></td>
             <td><input type="text" id="pf_inline_recorder_${k}" class="table-input" value="${item.recorder || ''}"></td>
             <td style="text-align:center;">
-              ${item.photo ? `<button class="${photoBtnClass}" style="padding:4px 8px; font-size:16px;" onclick="viewImg('${item.photo}')">📷 檢視</button>` : '<span style="font-size:16px;color:#475569;">無照片</span>'}
+              ${item.photo ? `<button class="${photoBtnClass}" style="padding:4px 8px; font-size:18px;" onclick="viewImg('${item.photo}')">📷 檢視</button>` : '<span style="font-size:18px;color:#475569;">無照片</span>'}
               <input type="file" id="pf_inline_file_${k}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
             </td>
             <td style="text-align:center;">
@@ -738,7 +738,7 @@
 
 
   // =========================================================================
-  // 📡⚙️ V46 藍芽扭力螺絲查檢回報區 核心邏輯架構 (完全自定義廠區與人員名單，密碼: 123456)
+  // 📡 V47 藍芽扭力螺絲查檢回報區 (完美對齊指定順序：1製令➔2抽查➔3作業➔4查檢➔5廠區➔6日期)
   // =========================================================================
 
   function initTorquePageData() {
@@ -746,15 +746,12 @@
     const dateInput = document.getElementById('tqDate');
     if(dateInput) dateInput.value = today;
 
-    // 監聽本分頁獨立雲端後台結構節點
     onValue(ref(db, 'torque_v46_settings'), (snapshot) => {
       window.torqueFullSettings = snapshot.val() || {};
       
-      // 1. 更新上方控制台「廠區」下拉選單
       const tqFactorySelect = document.getElementById('tqFactorySelect');
       const savedFactoryVal = tqFactorySelect ? tqFactorySelect.value : "";
       
-      // 2. 更新中間篩選控制台「廠區」下拉選單
       const fTqFactory = document.getElementById('fTqFactory');
       const savedFilterFactoryVal = fTqFactory ? fTqFactory.value : "";
 
@@ -774,19 +771,13 @@
         }
       }
 
-      // 觸發下拉連動渲染
       updateTqWorkerAndCheckerDropdowns();
       updateTqFilterDropdowns();
-      
-      // 3. 渲染最下方獨立管理後台的配置區域
       renderTorqueAdminConfigHTML();
-      
-      // 4. 渲染數據列表
       renderTorqueList();
     });
   }
 
-  // 點擊新增全新自定義廠區
   window.addNewTorqueFactory = () => {
     const password = prompt("🚨 新增全新自訂廠區，請輸入專屬密碼:");
     if (password !== "123456") { alert("密碼錯誤！"); return; }
@@ -794,28 +785,23 @@
     const name = document.getElementById('newTqFactoryName').value.trim();
     if(!name) { alert("請填寫廠區名稱！"); return; }
 
-    set(ref(db, `torque_v46_settings/${name}`), {
-      workers: "",
-      checkers: ""
-    }).then(() => {
-      alert(`🎉 廠區 [${name}] 已成功新增！您可以開始在下方設定專屬人員清單。`);
+    set(ref(db, `torque_v46_settings/${name}`), { workers: "", checkers: "" }).then(() => {
+      alert(`🎉 廠區 [${name}] 已成功新增！`);
       document.getElementById('newTqFactoryName').value = '';
     });
   };
 
-  // 點擊刪除某個廠區
   window.deleteTorqueFactory = (factoryName) => {
     const password = prompt(`🚨 警告！刪除[${factoryName}]將移除該廠區配置，請輸入確認密碼:`);
     if (password !== "123456") { alert("密碼錯誤，拒絕刪除！"); return; }
     
-    if(confirm(`確定要完全抹除 [${factoryName}] 及其人員配置設定嗎？`)) {
+    if(confirm(`確定要完全抹除 [${factoryName}] 嗎？`)) {
       remove(ref(db, `torque_v46_settings/${factoryName}`)).then(() => {
         alert(`🎉 廠區 [${factoryName}] 設定已成功自雲端刪除！`);
       });
     }
   };
 
-  // 儲存單一廠區的作業人員或查檢人員清單
   window.saveTorqueFactoryPersonnel = (factoryName, type) => {
     const password = prompt(`🚨 修改 [${factoryName}] 的人員名單，請輸入驗證密碼:`);
     if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
@@ -825,11 +811,10 @@
     if(type === 'checkers') val = document.getElementById(`adm_checkers_${factoryName}`).value.trim();
 
     set(ref(db, `torque_v46_settings/${factoryName}/${type}`), val).then(() => {
-      alert(`🎉 [${factoryName}] 的專屬人員清單修改並儲存成功！已即時生效同步雲端。`);
+      alert(`🎉 [${factoryName}] 的專屬人員清單儲存成功！`);
     });
   };
 
-  // 渲染獨立後台內，各廠區的人員獨立配置框框
   function renderTorqueAdminConfigHTML() {
     const container = document.getElementById('torqueAdminConfigContainer');
     if(!container) return;
@@ -838,24 +823,24 @@
     const entries = Object.entries(window.torqueFullSettings);
     
     if(entries.length === 0) {
-      html += `<div style="color: #64748b; font-size: 20px;">目前尚未建立任何自訂廠區，請使用上方欄位進行新增。</div>`;
+      html += `<div style="color: #64748b; font-size: 22px;">目前尚未建立任何自訂廠區。</div>`;
     } else {
       entries.forEach(([factoryName, config]) => {
         html += `
           <div style="border: 2px dashed #000; background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="color: #0284c7; font-size: 24px;">🏭 廠區名稱：<b>${factoryName}</b></span>
+              <span style="color: #0284c7; font-size: 26px;">🏭 廠區名稱：<b>${factoryName}</b></span>
               <button class="btn-action" style="background: #fca5a5; margin: 0;" onclick="deleteTorqueFactory('${factoryName}')">🗑️ 刪除此廠區</button>
             </div>
             <div style="margin-bottom: 10px;">
               <b>🛠️ 專屬「作業人員」名單：</b>
-              <input type="text" id="adm_workers_${factoryName}" value="${config.workers || ''}" placeholder="例: 張三,李四,王五">
-              <button class="btn-action" style="background: #67e8f9; font-size: 16px; padding: 6px 12px;" onclick="saveTorqueFactoryPersonnel('${factoryName}', 'workers')">儲存作業人員</button>
+              <input type="text" id="adm_workers_${factoryName}" value="${config.workers || ''}">
+              <button class="btn-action" style="background: #67e8f9; font-size: 18px;" onclick="saveTorqueFactoryPersonnel('${factoryName}', 'workers')">儲存作業人員</button>
             </div>
             <div>
               <b>🔍 專屬「查檢人員」名單：</b>
-              <input type="text" id="adm_checkers_${factoryName}" value="${config.checkers || ''}" placeholder="例: 趙組長,錢課長">
-              <button class="btn-action" style="background: #67e8f9; font-size: 16px; padding: 6px 12px;" onclick="saveTorqueFactoryPersonnel('${factoryName}', 'checkers')">儲存查檢人員</button>
+              <input type="text" id="adm_checkers_${factoryName}" value="${config.checkers || ''}">
+              <button class="btn-action" style="background: #67e8f9; font-size: 18px;" onclick="saveTorqueFactoryPersonnel('${factoryName}', 'checkers')">儲存查檢人員</button>
             </div>
           </div>`;
       });
@@ -863,7 +848,6 @@
     container.innerHTML = html;
   }
 
-  // 上方控制台：連動廠區變更人員與查檢名單
   window.updateTqWorkerAndCheckerDropdowns = () => {
     const factory = document.getElementById('tqFactorySelect').value;
     const wSelect = document.getElementById('tqWorkerSelect');
@@ -884,7 +868,6 @@
     cSelect.innerHTML = checkersArr.length ? checkersArr.map(m => `<option value="${m}">${m}</option>`).join('') : '<option value="">未設定查檢人員</option>';
   };
 
-  // 中間篩選控制台：廠區連動篩選下拉選單
   window.updateTqFilterDropdowns = () => {
     const fFactory = document.getElementById('fTqFactory').value;
     const fwSelect = document.getElementById('fTqWorker');
@@ -895,7 +878,6 @@
     let allCheckers = [];
 
     if(!fFactory) {
-      // 撈取全廠區所有人做大聯動
       Object.values(window.torqueFullSettings).forEach(config => {
         (config.workers || "").split(',').forEach(m => { if(m.trim()) allWorkers.push(m.trim()); });
         (config.checkers || "").split(',').forEach(m => { if(m.trim()) allCheckers.push(m.trim()); });
@@ -934,7 +916,7 @@
     const photoFile = document.getElementById('tqPhotoFile').files[0];
 
     if(!order || !worker || !checker || !factory || !date || !checkContent) {
-      alert('⚠️ 所有查檢回報欄位皆為必填項目，且廠區後台必須具備該選單人員！');
+      alert('⚠️ 所有查檢回報欄位皆為必填項目！');
       return;
     }
 
@@ -957,6 +939,7 @@
     if(photoFile) { compressImg(photoFile, (b64) => { processSave(b64); }); } else { processSave(null); }
   };
 
+  // V47 歷史紀錄表格：1.製令 ➔ 2.抽查內容紀錄 ➔ 3.作業人員 ➔ 4.查檢人員 ➔ 5.廠區 ➔ 6.日期 ➔ 照片 ➔ 操作
   window.renderTorqueList = () => {
     const listArea = document.getElementById('torqueListArea');
     if(!listArea) return;
@@ -986,12 +969,12 @@
 
       let html = `<table class="skill-table">
         <tr>
-          <th style="width: 13%; text-align:center;">5. 廠區</th>
-          <th style="width: 11%; text-align:center;">3. 作業人員</th>
-          <th style="width: 11%; text-align:center;">4. 查檢人員</th>
-          <th style="width: 12%; text-align:center;">1. 製令</th>
+          <th style="width: 13%; text-align:center;">1. 製令</th>
           <th style="width: 25%; text-align:left;">2. 抽查內容紀錄</th>
-          <th style="width: 11%; text-align:center;">6. 日期</th>
+          <th style="width: 12%; text-align:center;">3. 作業人員</th>
+          <th style="width: 12%; text-align:center;">4. 查檢人員</th>
+          <th style="width: 13%; text-align:center;">5. 廠區</th>
+          <th style="width: 13%; text-align:center;">6. 日期</th>
           <th style="width: 6%; text-align:center;">照片</th>
           <th style="width: 6%; text-align:center;">操作</th>
         </tr>`;
@@ -1003,10 +986,8 @@
           const k = item.key;
           const photoBtnClass = item.photo ? "btn-action btn-has-photo" : "btn-action";
           
-          // 建立行內廠區下拉選單
           const fOptions = factoryList.map(f => `<option value="${f}" ${item.factory===f?'selected':''}>${f}</option>`).join('');
           
-          // 根據該行當前廠區動態計算人員選單
           const currentConfig = window.torqueFullSettings[item.factory] || { workers: "", checkers: "" };
           const curWorkers = (currentConfig.workers || "").split(',').map(m => m.trim()).filter(m => m);
           const curCheckers = (currentConfig.checkers || "").split(',').map(m => m.trim()).filter(m => m);
@@ -1015,24 +996,24 @@
           const cOptions = curCheckers.map(m => `<option value="${m}" ${item.checker===m?'selected':''}>${m}</option>`).join('');
 
           html += `<tr style="background:#ffffff;">
+            <td><input type="text" id="tq_inline_order_${k}" class="table-input" style="text-align:center;" value="${item.order || ''}"></td>
+            <td><textarea id="tq_inline_content_${k}" class="table-input" rows="2" style="text-align:left; resize:vertical;">${item.checkContent || ''}</textarea></td>
+            <td><select id="tq_inline_worker_${k}" class="table-input" style="text-align:center; padding:2px;">${wOptions}</select></td>
+            <td><select id="tq_inline_checker_${k}" class="table-input" style="text-align:center; padding:2px;">${cOptions}</select></td>
             <td>
               <select id="tq_inline_factory_${k}" class="table-input" style="text-align:center; padding:2px;" onchange="handleInlineFactoryChange('${k}')">
                 ${fOptions}
               </select>
             </td>
-            <td><select id="tq_inline_worker_${k}" class="table-input" style="text-align:center; padding:2px;">${wOptions}</select></td>
-            <td><select id="tq_inline_checker_${k}" class="table-input" style="text-align:center; padding:2px;">${cOptions}</select></td>
-            <td><input type="text" id="tq_inline_order_${k}" class="table-input" style="text-align:center;" value="${item.order || ''}"></td>
-            <td><textarea id="tq_inline_content_${k}" class="table-input" rows="2" style="text-align:left; resize:vertical;">${item.checkContent || ''}</textarea></td>
             <td><input type="date" id="tq_inline_date_${k}" class="table-input" value="${item.date || ''}"></td>
             <td style="text-align:center;">
-              ${item.photo ? `<button class="${photoBtnClass}" style="padding:4px 8px; font-size:16px;" onclick="viewImg('${item.photo}')">📷</button>` : '<span style="font-size:14px;color:#94a3b8;">無</span>'}
+              ${item.photo ? `<button class="${photoBtnClass}" style="padding:6px 12px; font-size:20px;" onclick="viewImg('${item.photo}')">📷</button>` : '<span style="font-size:18px;color:#94a3b8;">無</span>'}
               <input type="file" id="tq_inline_file_${k}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
             </td>
             <td style="text-align:center;">
-              <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:3px auto; padding:4px!" onclick="saveInlineTorque('${k}', '${item.photo || ''}')" title="同步格子內容">💾</button>
-              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:3px auto; padding:4px!" onclick="loadToTopTorqueEditor('${k}', '${item.order}', '${item.worker}', '${item.checker}', '${item.factory}', '${item.date}', \`${item.checkContent || ''}\`, '${item.photo || ''}')" title="拉回上方修改">✏️</button>
-              <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:3px auto; padding:4px!" onclick="deleteTorqueRecord('${k}')" title="刪除紀錄">🗑️</button>
+              <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:3px auto;" onclick="saveInlineTorque('${k}', '${item.photo || ''}')" title="同步格子內容">💾</button>
+              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:3px auto;" onclick="loadToTopTorqueEditor('${k}', '${item.order}', '${item.worker}', '${item.checker}', '${item.factory}', '${item.date}', \`${item.checkContent || ''}\`, '${item.photo || ''}')" title="拉回上方修改">✏️</button>
+              <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:3px auto;" onclick="deleteTorqueRecord('${k}')" title="刪除紀錄">🗑️</button>
             </td>
           </tr>`;
         });
@@ -1042,7 +1023,6 @@
     });
   };
 
-  // 當使用者在表格格子內直接改「廠區」時，該行的人員聯動即時重新渲染
   window.handleInlineFactoryChange = (key) => {
     const newFactory = document.getElementById(`tq_inline_factory_${key}`).value;
     const wSelect = document.getElementById(`tq_inline_worker_${key}`);
@@ -1075,7 +1055,7 @@
       set(ref(db, `torque_records/${key}`), {
         key: parseInt(key), order: uOrder, checkContent: uContent, worker: uWorker, checker: uChecker, factory: uFactory, date: uDate, photo: b64 || existingPhoto || ""
       }).then(() => {
-        alert('🎉 該列藍芽扭力螺絲紀錄內容已在格子內直改更新成功！');
+        alert('🎉 藍芽扭力螺絲紀錄更新成功！');
         renderTorqueList();
       }).catch(err => alert('同步失敗: ' + err));
     };
@@ -1091,7 +1071,6 @@
     window.currentEditTqPhotoBase64 = photo;
 
     document.getElementById('tqFactorySelect').value = factory;
-    // 先強制連動一次上方的下拉選單
     updateTqWorkerAndCheckerDropdowns();
 
     document.getElementById('tqOrder').value = order;
@@ -1100,7 +1079,7 @@
     document.getElementById('tqDate').value = date;
     document.getElementById('tqCheckContent').value = checkContent;
 
-    alert('📍 該筆資料已順利載入最上方回報區控制台！請於上方進行精密調整後儲存。');
+    alert('📍 資料已載入最上方控制台！');
   };
 
   window.deleteTorqueRecord = (key) => {
