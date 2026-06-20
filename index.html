@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V49</title>
+  <title>員工評核系統 - V50</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 26px; font-weight: bold; }
     nav { width: 280px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; z-index: 100; }
@@ -47,10 +47,11 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260619-49</div>
+  <div class="version">版本: 20260620-50</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('skills')">📊 技能總表(⭐導師)</div>
+  <div onclick="showPage('freshman')">📊 新人通識紀錄區</div>
   <div onclick="showPage('6s')">✅ 6S Check</div>
   <div onclick="showPage('performance')">📈 平日績效紀錄表</div>
   <div onclick="showPage('torque')">📡 藍芽扭力回報區</div>
@@ -61,7 +62,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+  import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
   const db = getDatabase(initializeApp({
     apiKey: "AIzaSyAPBXphipNLgAHuqPg0HZ-J8HIqc9hQHc",
@@ -157,7 +158,6 @@
         <div id="performanceListArea"></div>`;
       initPerformancePageData();
     } else if (page === 'torque') {
-      // V49 藍芽扭力回報區 精密排序控制台：1.製令 ➔ 2.抽查內容 ➔ 3.作業人員 ➔ 4.查檢人員 ➔ 5.廠區 ➔ 6.日期
       content.innerHTML = `
         <h1>📡 藍芽扭力回報區</h1>
         <div class="card" style="border-color: #0ea5e9;">
@@ -201,9 +201,54 @@
           <div id="torqueAdminConfigContainer"></div>
         </div>`;
       initTorquePageData();
+    } else if (page === 'freshman') {
+      // 📊 新人通識紀錄區 頁面配置
+      content.innerHTML = `
+        <h1>📊 新人通識紀錄區</h1>
+        
+        <div class="card" style="border-color: #22c55e; background: #f0fdf4;">
+          <h3>🔍 新人通識即時看板</h3>
+          <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
+            <span style="font-size: 22px; white-space: nowrap;">人員名稱篩選：</span>
+            <select id="freshmanFilter" style="width: auto; min-width: 250px;" onchange="renderFreshmanTable()"><option value="">顯示全部新人</option></select>
+          </div>
+          <div id="freshmanTableContainer" style="overflow-x: auto;"></div>
+        </div>
+
+        <div class="card" style="border-color: #f59e0b;">
+          <h3>➕ 新增 / 調整通識紀錄 (中間控制台)</h3>
+          <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">1. 人員名稱：<input type="text" id="fmName" placeholder="請輸入新人姓名"></div>
+            <div style="flex: 1; min-width: 200px;">2. 進場日期：<input type="date" id="fmJoinDate"></div>
+            <div style="flex: 1; min-width: 200px;">5. 考核人員：<input type="text" id="fmChecker" placeholder="請輸入考核人員"></div>
+          </div>
+          <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 300px;">3. 技能項目 (多個可用英文逗號區隔批次新增)：<input type="text" id="fmSkillItem" placeholder="例如: 危害告知, 消防演練, 6S規範"></div>
+            <div style="flex: 1; min-width: 200px;">4. 完成日期：<input type="date" id="fmDoneDate"></div>
+          </div>
+          <button class="btn" style="background: #f59e0b;" onclick="saveFreshmanControlRecord()">💾 新增通識項目與連結</button>
+        </div>
+
+        <div class="card" style="border: 4px solid #000; background: #fafafa;">
+          <h3>⚙️ 新人通識 基礎結構維護區</h3>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 300px; background: #fff; padding: 15px; border: 2px solid #000; border-radius: 8px;">
+              <h4>👥 批次新增新人名單</h4>
+              <input type="text" id="batchFreshmanNames" placeholder="輸入姓名 (多個請用英文逗號隔開)">
+              <button class="btn-action" style="background: #86efac; width: 100%; margin: 8px 0;" onclick="addBatchFreshmen()">批次新增新人</button>
+            </div>
+            <div style="flex: 1; min-width: 300px; background: #fff; padding: 15px; border: 2px solid #000; border-radius: 8px;">
+              <h4>🛠️ 批次主框架技能項目定義</h4>
+              <input type="text" id="batchFreshmanSkills" placeholder="輸入技能項目 (多個請用英文逗號隔開)">
+              <button class="btn-action" style="background: #93c5fd; width: 100%; margin: 8px 0;" onclick="addBatchFreshmanSkills()">批次新增技能</button>
+            </div>
+          </div>
+          <div id="freshmanStructureManagementArea" style="margin-top: 20px;"></div>
+        </div>`;
+      initFreshmanPageData();
     } else if (page === 'admin') {
       const password = prompt("請輸入管理員密碼:");
-      if (password !== "0000") { alert("密碼錯誤！"); return; }
+      if (password !== "123456") { alert("密碼錯誤！"); return; }
       content.innerHTML = `
         <div class="card"><h3>📷 照片管理</h3><input type="file" id="photoInput" accept="image/*"><button class="btn" onclick="uploadPhoto()">更新首頁照片</button></div>
         <div class="card">
@@ -554,7 +599,7 @@
 
   window.savePerformanceRecord = () => {
     const password = prompt("🚨 此項操作需權限，請輸入管理員密碼:");
-    if (password !== "0000") { alert("密碼錯誤，拒絕儲存！"); return; }
+    if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
 
     const leader = document.getElementById('pfLeaderSelect').value;
     const name = document.getElementById('pfMemberSelect').value;
@@ -652,7 +697,7 @@
 
   window.saveInlinePerformance = (key, leader, name, existingPhoto) => {
     const password = prompt("🚨 修改資料需進行權限驗證，請輸入密碼:");
-    if (password !== "0000") { alert("密碼錯誤，更新失敗！"); return; }
+    if (password !== "123456") { alert("密碼錯誤，更新失敗！"); return; }
 
     const uDate = document.getElementById(`pf_inline_date_${key}`).value;
     const uScore = parseInt(document.getElementById(`pf_inline_score_${key}`).value);
@@ -675,7 +720,7 @@
 
   window.loadToTopPerformanceEditor = (key, leader, name, date, score, recorder, contentDesc, photo) => {
     const password = prompt("🚨 載入編輯資料需進行權限驗證，請輸入密碼:");
-    if (password !== "0000") { alert("密碼錯誤，拒絕加載！"); return; }
+    if (password !== "123456") { alert("密碼錯誤，拒絕加載！"); return; }
 
     window.currentEditPfKey = key; window.currentEditPfPhotoBase64 = photo;
     const pLeader = document.getElementById('pfLeaderSelect'); if(pLeader) pLeader.value = leader;
@@ -698,7 +743,7 @@
 
   window.deletePerformanceRecord = (key) => {
     const password = prompt("🚨 警告：此項目將從資料庫中永久刪除，請輸入確認密碼:");
-    if (password !== "0000") { alert("密碼錯誤，刪除程序終止！"); return; }
+    if (password !== "123456") { alert("密碼錯誤，刪除程序終止！"); return; }
     if(confirm('確定要永久刪除此筆平日績效紀錄嗎？')) { remove(ref(db, `performance_records/${key}`)).then(() => { alert('資料已成功自雲端刪除！'); renderPerformance(); }); }
   };
 
@@ -738,7 +783,7 @@
 
 
   // =========================================================================
-  // 📡 V49 藍芽扭力回報區 (完美對齊指定順序：1製令➔2抽查➔3作業➔4查檢➔5廠區➔6日期)
+  // 📡 藍芽扭力回報區 (完美對齊指定順序：1製令➔2抽查➔3作業➔4查檢➔5廠區➔6日期)
   // =========================================================================
 
   function initTorquePageData() {
@@ -939,7 +984,6 @@
     if(photoFile) { compressImg(photoFile, (b64) => { processSave(b64); }); } else { processSave(null); }
   };
 
-  // V49 歷史紀錄表格：1.製令 ➔ 2.抽查內容紀錄 ➔ 3.作業人員 ➔ 4.查檢人員 ➔ 5.廠區 ➔ 6.日期 ➔ 照片 ➔ 操作
   window.renderTorqueList = () => {
     const listArea = document.getElementById('torqueListArea');
     if(!listArea) return;
@@ -1089,6 +1133,230 @@
       remove(ref(db, `torque_records/${key}`)).then(() => { alert('資料已成功自雲端刪除！'); renderTorqueList(); });
     }
   };
+
+
+  // =========================================================================
+  // 📝 📊 新人通識紀錄區 核心邏輯 (方案 B 完全自主客製格子直改快打)
+  // =========================================================================
+
+  window.freshmanDataCache = { list: {}, skills: "", names: "" };
+
+  function initFreshmanPageData() {
+    const today = new Date().toISOString().split('T')[0];
+    if(document.getElementById('fmJoinDate')) document.getElementById('fmJoinDate').value = today;
+    if(document.getElementById('fmDoneDate')) document.getElementById('fmDoneDate').value = today;
+
+    // 監聽基本名單與技能定義框架
+    onValue(ref(db, 'freshman_config'), (snap) => {
+      const cfg = snap.val() || { skills: "", names: "" };
+      window.freshmanDataCache.skills = cfg.skills || "";
+      window.freshmanDataCache.names = cfg.names || "";
+
+      // 填入基礎結構維護區的輸入框方便增改
+      if(document.getElementById('batchFreshmanNames')) document.getElementById('batchFreshmanNames').value = cfg.names || "";
+      if(document.getElementById('batchFreshmanSkills')) document.getElementById('batchFreshmanSkills').value = cfg.skills || "";
+
+      // 更新篩選下拉選單
+      const fFilter = document.getElementById('freshmanFilter');
+      if(fFilter) {
+        const savedVal = fFilter.value;
+        const nameList = (cfg.names || "").split(',').map(n => n.trim()).filter(n => n);
+        fFilter.innerHTML = '<option value="">顯示全部新人</option>' + nameList.map(n => `<option value="${n}">${n}</option>`).join('');
+        if(nameList.includes(savedVal)) fFilter.value = savedVal;
+      }
+
+      renderFreshmanAdminStructureHTML();
+      loadFreshmanRecordsAndRenderTable();
+    });
+  }
+
+  function loadFreshmanRecordsAndRenderTable() {
+    onValue(ref(db, 'freshman_records'), (snap) => {
+      window.freshmanDataCache.list = snap.val() || {};
+      renderFreshmanTable();
+    });
+  }
+
+  window.addBatchFreshmen = () => {
+    const password = prompt("🚨 變更結構基礎設定，請輸入驗證密碼:");
+    if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
+    const inputVal = document.getElementById('batchFreshmanNames').value.trim();
+    set(ref(db, 'freshman_config/names'), inputVal).then(() => alert("🎉 新人基礎名單架構更新同步成功！"));
+  };
+
+  window.addBatchFreshmanSkills = () => {
+    const password = prompt("🚨 變更結構基礎設定，請輸入驗證密碼:");
+    if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
+    const inputVal = document.getElementById('batchFreshmanSkills').value.trim();
+    set(ref(db, 'freshman_config/skills'), inputVal).then(() => alert("🎉 通識技能主框架項目定義更新成功！"));
+  };
+
+  function renderFreshmanAdminStructureHTML() {
+    const area = document.getElementById('freshmanStructureManagementArea');
+    if(!area) return;
+
+    const namesArr = window.freshmanDataCache.names.split(',').map(n => n.trim()).filter(n => n);
+    const skillsArr = window.freshmanDataCache.skills.split(',').map(s => s.trim()).filter(s => s);
+
+    area.innerHTML = `
+      <div style="background: #e2e8f0; padding: 15px; border-radius: 8px; border: 2px solid #000;">
+        <p style="margin: 0 0 8px 0; font-size: 22px;">💡 <b>目前定義框架總覽：</b></p>
+        <div>👥 <b>建立的新人 (${namesArr.length} 位)：</b> ${namesArr.map(n => `<span style="background:#fff; padding:3px 8px; border:1px solid #000; border-radius:4px; margin-right:5px; display:inline-block;">${n}</span>`).join('')}</div>
+        <div style="margin-top: 10px;">🛠️ <b>通識技能橫軸 (${skillsArr.length} 項)：</b> ${skillsArr.map(s => `<span style="background:#fff; padding:3px 8px; border:1px solid #000; border-radius:4px; margin-right:5px; display:inline-block;">${s}</span>`).join('')}</div>
+      </div>`;
+  }
+
+  window.saveFreshmanControlRecord = () => {
+    const password = prompt("🚨 使用控制台變更雲端數據，請輸入密碼:");
+    if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
+
+    const name = document.getElementById('fmName').value.trim();
+    const joinDate = document.getElementById('fmJoinDate').value;
+    const checker = document.getElementById('fmChecker').value.trim();
+    const rawSkills = document.getElementById('fmSkillItem').value.trim();
+    const doneDate = document.getElementById('fmDoneDate').value;
+
+    if(!name) { alert("請填寫新人人員名稱！"); return; }
+
+    // 自動更新/擴充基礎新人名單
+    let curNames = window.freshmanDataCache.names.split(',').map(n => n.trim()).filter(n => n);
+    if(!curNames.includes(name)) {
+      curNames.push(name);
+      set(ref(db, 'freshman_config/names'), curNames.join(', '));
+    }
+
+    // 如果輸入了完成特定技能
+    if(rawSkills) {
+      let curSkills = window.freshmanDataCache.skills.split(',').map(s => s.trim()).filter(s => s);
+      const skillInputArr = rawSkills.split(',').map(s => s.trim()).filter(s => s);
+
+      let updates = {};
+      skillInputArr.forEach(sk => {
+        if(!curSkills.includes(sk)) {
+          curSkills.push(sk);
+        }
+        // 用 姓名_技能項目 作為唯一的雲端鎖定鍵
+        const itemKey = `${name}__${sk}`;
+        updates[`freshman_records/${itemKey}`] = {
+          name: name,
+          joinDate: joinDate || "",
+          skill: sk,
+          doneDate: doneDate || "",
+          checker: checker || ""
+        };
+      });
+
+      set(ref(db, 'freshman_config/skills'), curSkills.join(', '));
+      update(ref(db), updates).then(() => {
+        alert("🎉 新人通識紀錄與大框架多重數據同步發送完畢！");
+        document.getElementById('fmSkillItem').value = "";
+      });
+    } else {
+      // 僅更新基本資料 (如進場日期或考核人員)
+      alert("🎉 基礎結構已對齊！請直接在上方表格進行快打直改！");
+    }
+  };
+
+  // 方案 B 的核心：即時渲染橫縱交叉大矩陣 + 欄位格子快打直改
+  window.renderFreshmanTable = () => {
+    const container = document.getElementById('freshmanTableContainer');
+    if(!container) return;
+
+    const filterName = document.getElementById('freshmanFilter').value;
+    
+    let namesArr = window.freshmanDataCache.names.split(',').map(n => n.trim()).filter(n => n);
+    const skillsArr = window.freshmanDataCache.skills.split(',').map(s => s.trim()).filter(s => s);
+    const records = window.freshmanDataCache.list;
+
+    if(filterName) {
+      namesArr = namesArr.filter(n => n === filterName);
+    }
+
+    let html = `<table class="skill-table">
+      <tr>
+        <th style="width: 150px; text-align:center; background:#cbd5e1;">人員名稱</th>
+        <th style="width: 180px; text-align:center; background:#cbd5e1;">進場日期</th>
+        ${skillsArr.map(sk => `<th style="text-align:center; min-width:160px;">${sk}</th>`).join('')}
+        <th style="width: 180px; text-align:center; background:#93c5fd;">最右側 考核人員</th>
+        <th style="width: 100px; text-align:center; background:#cbd5e1;">即時聯動</th>
+      </tr>`;
+
+    if(namesArr.length === 0) {
+      html += `<tr><td colspan="${skillsArr.length + 4}" style="text-align:center; color:#94a3b8;">目前尚無設定新人名單數據。</td></tr>`;
+    } else {
+      namesArr.forEach(name => {
+        // 先抓取該新人隨便一項紀錄裡記錄的進場日期與考核人員作為初始呈現
+        let matchedJoinDate = "";
+        let matchedChecker = "";
+
+        skillsArr.forEach(sk => {
+          const key = `${name}__${sk}`;
+          if(records[key]) {
+            if(records[key].joinDate) matchedJoinDate = records[key].joinDate;
+            if(records[key].checker) matchedChecker = records[key].checker;
+          }
+        });
+
+        html += `<tr>
+          <td style="text-align:center; background:#f8fafc; color:#000;">👤 <b>${name}</b></td>
+          <td><input type="date" id="cell_join_${name}" class="table-input" style="padding:4px; font-size:20px;" value="${matchedJoinDate}"></td>`;
+          
+          // 橫軸各通識項目的完成日期
+          skillsArr.forEach(sk => {
+            const key = `${name}__${sk}`;
+            const curRec = records[key] || {};
+            const dVal = curRec.doneDate || "";
+            
+            // 格子若有完成日期，背景顯示淡綠色強化視覺
+            const cellStyle = dVal ? "background-color: #dcfce7;" : "";
+
+            html += `<td style="${cellStyle}">
+              <input type="date" id="cell_done_${name}__${sk}" class="table-input" style="padding:4px; font-size:20px; ${cellStyle}" value="${dVal}">
+            </td>`;
+          });
+
+          // 最右邊的考核人員名稱
+          html += `
+          <td><input type="text" id="cell_check_${name}" class="table-input" style="padding:4px; font-size:20px; text-align:center;" value="${matchedChecker}" placeholder="填寫考核人"></td>
+          <td style="text-align:center;">
+            <button class="btn-action btn-action-sm" style="background:#86efac; margin:0; padding:6px 12px !important;" onclick="saveFreshmanRowInline('${name}')" title="聯動更新雲端">💾</button>
+          </td>
+        </tr>`;
+      });
+    }
+
+    html += `</table>`;
+    container.innerHTML = html;
+  };
+
+  window.saveFreshmanRowInline = (name) => {
+    const password = prompt(`🚨 確定要同步聯動更新 [${name}] 的通識考核格子數據嗎？請輸入密碼:`);
+    if (password !== "123456") { alert("密碼錯誤，放棄儲存！"); return; }
+
+    const uJoinDate = document.getElementById(`cell_join_${name}`).value;
+    const uChecker = document.getElementById(`cell_check_${name}`).value.trim();
+    const skillsArr = window.freshmanDataCache.skills.split(',').map(s => s.trim()).filter(s => s);
+
+    let updates = {};
+    skillsArr.forEach(sk => {
+      const key = `${name}__${sk}`;
+      const uDoneDate = document.getElementById(`cell_done_${name}__${sk}`).value;
+
+      // 無論格子是否填寫完成日期，皆全面交叉聯動綁定，確保整欄數據一致
+      updates[`freshman_records/${key}`] = {
+        name: name,
+        joinDate: uJoinDate,
+        skill: sk,
+        doneDate: uDoneDate,
+        checker: uChecker
+      };
+    });
+
+    update(ref(db), updates).then(() => {
+      alert(`🎉 [${name}] 的新人通識全橫軸矩陣格子數據已成功直改發送雲端！`);
+    }).catch(err => alert("同步失敗: " + err));
+  };
+
 
   showPage('home');
 </script>
