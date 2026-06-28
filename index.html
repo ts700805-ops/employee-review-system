@@ -122,7 +122,7 @@
     } else if (page === '6s') {
       content.innerHTML = `<h1>6S Check</h1>
         <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
-          <select id="unitSelect" onchange="render6S()" style="width: auto; min-width: 250px;"><option value="">請選擇課別</option><option value="製造一課">製造一課</option><option value="製造二課">製造二課</option></select>
+          <select id="unitSelect" onchange="render6S()" style="width: auto; min-width: 250px;"><option value="">請選擇課別</option><option value="製造一課">製造一課</option><option value="製造二課">製造二課</option><option value="秘書長評核">秘書長評核</option></select>
           <button class="btn" style="background: #10b981;" onclick="downloadCSV()">📊 匯出 CSV 檔</button>
         </div>
         <div id="sixSList"></div><hr><div id="sixSContainer"></div>`;
