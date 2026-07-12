@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V51</title>
+  <title>員工評核系統 - V53</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 26px; font-weight: bold; }
     nav { width: 280px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; z-index: 100; }
@@ -47,7 +47,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260620-51</div>
+  <div class="version">版本: 20260712-53</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('skills')">📊 技能總表(⭐導師)</div>
@@ -107,9 +107,15 @@
     return "circle-progress p-0";
   };
 
-  let globalSymbols = { normal: "✓", master: "⭐" };
+  let globalSymbols = { normal: "✓", master: "⭐", half: "◒" };
   onValue(ref(db, 'settings/symbols'), (s) => {
-    if (s.val()) { globalSymbols = s.val(); }
+    if (s.val()) { 
+      globalSymbols = {
+        normal: s.val().normal || "✓",
+        master: s.val().master || "⭐",
+        half: s.val().half || "◒"
+      }; 
+    }
   });
 
   window.showPage = (page) => {
@@ -202,7 +208,6 @@
         </div>`;
       initTorquePageData();
     } else if (page === 'freshman') {
-      // 📊 新人通識紀錄區 頁面配置
       content.innerHTML = `
         <h1>📊 新人通識紀錄區</h1>
         
@@ -249,14 +254,15 @@
       initFreshmanPageData();
     } else if (page === 'admin') {
       const password = prompt("請輸入管理員密碼:");
-      if (password !== "123456") { alert("密碼錯誤！"); return; }
+      if (password !== "0000") { alert("密碼錯誤！"); return; }
       content.innerHTML = `
         <div class="card"><h3>📷 照片管理</h3><input type="file" id="photoInput" accept="image/*"><button class="btn" onclick="uploadPhoto()">更新首頁照片</button></div>
         <div class="card">
           <h3>🎨 技能總表符號樣式設定</h3>
-          <div style="display:flex; gap:15px;">
-            <div style="flex:1;">一般技能符號：<input type="text" id="symNormal" value="${globalSymbols.normal}"></div>
-            <div style="flex:1;">導師技能符號：<input type="text" id="symMaster" value="${globalSymbols.master}"></div>
+          <div style="display:flex; gap:15px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">一般技能符號：<input type="text" id="symNormal" value="${globalSymbols.normal}"></div>
+            <div style="flex:1; min-width:200px;">半熟手技能符號：<input type="text" id="symHalf" value="${globalSymbols.half}"></div>
+            <div style="flex:1; min-width:200px;">導師技能符號：<input type="text" id="symMaster" value="${globalSymbols.master}"></div>
           </div>
           <button class="btn" style="background:#f59e0b; margin-top:10px;" onclick="saveSymbols()">儲存符號設定</button>
         </div>
@@ -265,6 +271,7 @@
         <div style="margin: 10px 0; font-size:22px;">
           技能類型：
           <label><input type="radio" name="skillType" value="normal" checked style="width:auto; margin-right:5px;">一般技能</label>
+          <label><input type="radio" name="skillType" value="half" style="width:auto; margin-left:20px; margin-right:5px;">半熟手</label>
           <label><input type="radio" name="skillType" value="master" style="width:auto; margin-left:20px; margin-right:5px;">技能導師</label>
         </div>
         <input type="text" id="sName" placeholder="技能名稱(逗號分隔)"><button class="btn" onclick="addSkill()">新增技能</button><hr><div id="skillEditArea"></div></div>`;
@@ -489,7 +496,11 @@
     const type = document.querySelector('input[name="skillType"]:checked').value;
     if(!leader || !member || !skillsInput) { alert('請完整選擇組長、組員並輸入技能名稱！'); return; }
 
-    const newSkillsArr = skillsInput.split(',').map(sk => { const clean = sk.trim(); return type === 'master' ? `${clean}__master` : clean; }).filter(sk => sk);
+    let suffix = "";
+    if (type === 'master') suffix = "__master";
+    if (type === 'half') suffix = "__half";
+
+    const newSkillsArr = skillsInput.split(',').map(sk => { const clean = sk.trim(); return suffix ? `${clean}${suffix}` : clean; }).filter(sk => sk);
     onValue(ref(db, `skills/${leader}/${member}`), (snapshot) => {
       let currentVal = snapshot.val() || "";
       let currentArr = currentVal.split(',').map(s => s.trim()).filter(s => s);
@@ -500,8 +511,9 @@
   
   window.saveSymbols = () => {
     const normal = document.getElementById('symNormal').value || "✓";
+    const half = document.getElementById('symHalf').value || "◒";
     const master = document.getElementById('symMaster').value || "⭐";
-    set(ref(db, 'settings/symbols'), { normal, master }).then(() => { alert('🎉 技能總表顯示符號修改成功！已即時發送至雲端。'); });
+    set(ref(db, 'settings/symbols'), { normal, half, master }).then(() => { alert('🎉 技能總表顯示符號修改成功！已即時發送至雲端。'); });
   };
 
   window.saveAdminTeam = (l) => { const val = document.getElementById('e_'+l).value; set(ref(db, `teams/${l}`), val).then(() => alert(`🎉 [${l}組] 人員配置修改並儲存成功！`)); };
@@ -529,7 +541,10 @@
     onValue(ref(db, `skills/${leader}`), (s) => {
       const data = s.val() || {};
       let skills = new Set(); 
-      Object.values(data).forEach(v => v.split(',').forEach(sk => { let clean = sk.trim().replace('__master', ''); if(clean) skills.add(clean); }));
+      Object.values(data).forEach(v => v.split(',').forEach(sk => { 
+        let clean = sk.trim().replace('__master', '').replace('__half', ''); 
+        if(clean) skills.add(clean); 
+      }));
       const skillsArray = Array.from(skills);
       let skillCounts = new Array(skillsArray.length).fill(0);
 
@@ -537,11 +552,17 @@
       for(let m in data) {
         let count = 0; let memberSkills = data[m].split(',').map(x => x.trim());
         let rowHtml = `<tr><td>${m}</td>` + skillsArray.map((sk, idx) => { 
-          const hasNormal = memberSkills.includes(sk); const hasMaster = memberSkills.includes(`${sk}__master`);
-          if(hasNormal || hasMaster){ 
+          const hasNormal = memberSkills.includes(sk); 
+          const hasMaster = memberSkills.includes(`${sk}__master`);
+          const hasHalf = memberSkills.includes(`${sk}__half`);
+          
+          if(hasNormal || hasMaster || hasHalf){ 
             count++; skillCounts[idx]++; 
-            let displaySymbol = hasMaster ? globalSymbols.master : globalSymbols.normal;
-            let displayColor = hasMaster ? "#a855f7" : "#22c55e"; 
+            let displaySymbol = globalSymbols.normal;
+            let displayColor = "#22c55e"; 
+            if(hasMaster) { displaySymbol = globalSymbols.master; displayColor = "#a855f7"; }
+            if(hasHalf) { displaySymbol = globalSymbols.half; displayColor = "#f59e0b"; }
+            
             return `<td style="text-align:center; color:${displayColor}; font-size:26px;">${displaySymbol}</td>`; 
           } 
           return '<td></td>'; 
@@ -600,7 +621,7 @@
 
   window.savePerformanceRecord = () => {
     const password = prompt("🚨 此項操作需權限，請輸入管理員密碼:");
-    if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
+    if (password !== "0000") { alert("密碼錯誤，拒絕儲存！"); return; }
 
     const leader = document.getElementById('pfLeaderSelect').value;
     const name = document.getElementById('pfMemberSelect').value;
@@ -684,9 +705,9 @@
               <input type="file" id="pf_inline_file_${k}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
             </td>
             <td style="text-align:center;">
-              <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:90%; margin:4px auto;" onclick="saveInlinePerformance('${k}', '${item.leader}', '${item.name}', '${item.photo || ''}')" title="同步格子內容">💾 儲存</button>
-              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:90%; margin:4px auto;" onclick="loadToTopPerformanceEditor('${k}', '${item.leader}', '${item.name}', '${item.date}', '${item.score}', '${item.recorder}', \`${item.contentDesc || ''}\`, '${item.photo || ''}')" title="拉到上方編輯">✏️ 修改</button>
-              <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:90%; margin:4px auto;" onclick="deletePerformanceRecord('${k}')" title="刪除紀錄">🗑️</button>
+              <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:4px auto;" onclick="saveInlinePerformance('${k}', '${item.leader}', '${item.name}', '${item.photo || ''}')" title="同步格子內容">💾 儲存</button>
+              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:4px auto;" onclick="loadToTopPerformanceEditor('${k}', '${item.leader}', '${item.name}', '${item.date}', '${item.score}', '${item.recorder}', \`${item.contentDesc || ''}\`, '${item.photo || ''}')" title="拉到上方編輯">✏️ 修改</button>
+              <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:4px auto;" onclick="deletePerformanceRecord('${k}')" title="刪除紀錄">🗑️</button>
             </td>
           </tr>`;
         });
@@ -698,7 +719,7 @@
 
   window.saveInlinePerformance = (key, leader, name, existingPhoto) => {
     const password = prompt("🚨 修改資料需進行權限驗證，請輸入密碼:");
-    if (password !== "123456") { alert("密碼錯誤，更新失敗！"); return; }
+    if (password !== "0000") { alert("密碼錯誤，更新失敗！"); return; }
 
     const uDate = document.getElementById(`pf_inline_date_${key}`).value;
     const uScore = parseInt(document.getElementById(`pf_inline_score_${key}`).value);
@@ -721,7 +742,7 @@
 
   window.loadToTopPerformanceEditor = (key, leader, name, date, score, recorder, contentDesc, photo) => {
     const password = prompt("🚨 載入編輯資料需進行權限驗證，請輸入密碼:");
-    if (password !== "123456") { alert("密碼錯誤，拒絕加載！"); return; }
+    if (password !== "0000") { alert("密碼錯誤，拒絕加載！"); return; }
 
     window.currentEditPfKey = key; window.currentEditPfPhotoBase64 = photo;
     const pLeader = document.getElementById('pfLeaderSelect'); if(pLeader) pLeader.value = leader;
@@ -744,7 +765,7 @@
 
   window.deletePerformanceRecord = (key) => {
     const password = prompt("🚨 警告：此項目將從資料庫中永久刪除，請輸入確認密碼:");
-    if (password !== "123456") { alert("密碼錯誤，刪除程序終止！"); return; }
+    if (password !== "0000") { alert("密碼錯誤，刪除程序終止！"); return; }
     if(confirm('確定要永久刪除此筆平日績效紀錄嗎？')) { remove(ref(db, `performance_records/${key}`)).then(() => { alert('資料已成功自雲端刪除！'); renderPerformance(); }); }
   };
 
@@ -880,7 +901,7 @@
               <button class="btn-action" style="background: #67e8f9; font-size: 18px;" onclick="saveTorqueFactoryPersonnel('${factoryName}', 'workers')">儲存作業人員</button>
             </div>
             <div>
-              <b>🔍 專屬「查檢人員\"名單：</b>
+              <b>🔍 專屬「查檢人員」名單：</b>
               <input type="text" id="adm_checkers_${factoryName}" value="${config.checkers || ''}">
               <button class="btn-action" style="background: #67e8f9; font-size: 18px;" onclick="saveTorqueFactoryPersonnel('${factoryName}', 'checkers')">儲存查檢人員</button>
             </div>
@@ -1053,7 +1074,7 @@
             </td>
             <td style="text-align:center;">
               <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:3px auto;" onclick="saveInlineTorque('${k}', '${item.photo || ''}')" title="同步格子內容">💾</button>
-              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:3px auto;" onclick="loadToTopTorqueEditor('${k}', '${item.order}', '${item.worker}', '${item.checker}', '${item.factory}', '${item.date}', \`${item.checkContent || ''}\`, '${item.photo || ''}')" title="拉回上方修改">✏️</button>
+              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:95% auto;" onclick="loadToTopTorqueEditor('${k}', '${item.order}', '${item.worker}', '${item.checker}', '${item.factory}', '${item.date}', \`${item.checkContent || ''}\`, '${item.photo || ''}')" title="拉回上方修改">✏️</button>
               <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:3px auto;" onclick="deleteTorqueRecord('${k}')" title="刪除紀錄">🗑️</button>
             </td>
           </tr>`;
@@ -1133,7 +1154,7 @@
 
 
   // =========================================================================
-  // 📝 📊 新人通識紀錄區 核心邏輯 (V51 廠區整合、未填粉紅防呆、最新進場置頂)
+  // 📝 📊 新人通識紀錄區 核心邏輯 (V52 廠區整合、未填粉紅防呆、最新進場置頂)
   // =========================================================================
 
   window.freshmanDataCache = { list: {}, skills: "", names: "" };
@@ -1143,7 +1164,6 @@
     if(document.getElementById('fmJoinDate')) document.getElementById('fmJoinDate').value = today;
     if(document.getElementById('fmDoneDate')) document.getElementById('fmDoneDate').value = today;
 
-    // 先從小設定檔與藍芽扭力共享的廠區清單抓資料，同步渲染中間後台的「廠區選擇」
     onValue(ref(db, 'torque_v46_settings'), (factSnap) => {
       const factData = factSnap.val() || {};
       const fList = Object.keys(factData);
@@ -1152,7 +1172,6 @@
         selectEl.innerHTML = '<option value="">請選擇廠區</option>' + fList.map(f => `<option value="${f}">${f}</option>`).join('');
       }
 
-      // 再載入新人核心定義框架
       onValue(ref(db, 'freshman_config'), (snap) => {
         const cfg = snap.val() || { skills: "", names: "" };
         window.freshmanDataCache.skills = cfg.skills || "";
@@ -1184,14 +1203,14 @@
 
   window.addBatchFreshmen = () => {
     const password = prompt("🚨 變更結構基礎設定，請輸入驗證密碼:");
-    if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
+    if (password !== "0000") { alert("密碼錯誤，拒絕儲存！"); return; }
     const inputVal = document.getElementById('batchFreshmanNames').value.trim();
     set(ref(db, 'freshman_config/names'), inputVal).then(() => alert("🎉 新人基礎名單架構更新同步成功！"));
   };
 
   window.addBatchFreshmanSkills = () => {
     const password = prompt("🚨 變更結構基礎設定，請輸入驗證密碼:");
-    if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
+    if (password !== "0000") { alert("密碼錯誤，拒絕儲存！"); return; }
     const inputVal = document.getElementById('batchFreshmanSkills').value.trim();
     set(ref(db, 'freshman_config/skills'), inputVal).then(() => alert("🎉 通識技能主框架項目定義更新成功！"));
   };
@@ -1213,7 +1232,7 @@
 
   window.saveFreshmanControlRecord = () => {
     const password = prompt("🚨 使用控制台變更雲端數據，請輸入密碼:");
-    if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
+    if (password !== "0000") { alert("密碼錯誤，拒絕儲存！"); return; }
 
     const name = document.getElementById('fmName').value.trim();
     const joinDate = document.getElementById('fmJoinDate').value;
@@ -1224,7 +1243,6 @@
 
     if(!name) { alert("請填寫新人人員名稱！"); return; }
 
-    // 自動擴充基礎新人名單
     let curNames = window.freshmanDataCache.names.split(',').map(n => n.trim()).filter(n => n);
     if(!curNames.includes(name)) {
       curNames.push(name);
@@ -1259,7 +1277,6 @@
     }
   };
 
-  // V51 核心：依進場日期最新排序呈現 + 廠區新增 + 未填粉紅防呆
   window.renderFreshmanTable = () => {
     const container = document.getElementById('freshmanTableContainer');
     if(!container) return;
@@ -1269,9 +1286,8 @@
     const skillsArr = window.freshmanDataCache.skills.split(',').map(s => s.trim()).filter(s => s);
     const records = window.freshmanDataCache.list;
 
-    // 建立新人的屬性物件陣列，以便做高階排序
     let nameObjects = namesArr.map(name => {
-      let maxJoinDate = "0000-00-00"; // 預設極小值
+      let maxJoinDate = "0000-00-00"; 
       let factoryVal = "";
       let checkerVal = "";
 
@@ -1286,14 +1302,12 @@
       return { name, joinDate: maxJoinDate, factory: factoryVal, checker: checkerVal };
     });
 
-    // 🌟 排序關鍵：進場時間越晚（最新、字串大）排越前面
     nameObjects.sort((a, b) => {
       if(a.joinDate === "0000-00-00" && b.joinDate !== "0000-00-00") return 1;
       if(b.joinDate === "0000-00-00" && a.joinDate !== "0000-00-00") return -1;
       return b.joinDate.localeCompare(a.joinDate);
     });
 
-    // 如果有選定姓名篩選
     if(filterName) {
       nameObjects = nameObjects.filter(obj => obj.name === filterName);
     }
@@ -1328,13 +1342,11 @@
               </select>
             </td>`;
             
-            // 橫軸技能大矩陣 (防呆：未填寫粉紅色，已填寫淡綠色)
             skillsArr.forEach(sk => {
               const key = `${name}__${sk}`;
               const curRec = records[key] || {};
               const dVal = curRec.doneDate || "";
               
-              // 🌟 核心樣式判斷：未填寫日期顯示粉紅色，已填寫顯示淡綠色
               const cellStyle = dVal ? "background-color: #dcfce7;" : "background-color: #ffe4e6; color: #ff0000;";
 
               html += `<td style="${cellStyle}">
@@ -1342,7 +1354,6 @@
               </td>`;
             });
 
-            // 考核人員與儲存按鈕
             html += `
             <td><input type="text" id="cell_check_${name}" class="table-input" style="padding:4px; font-size:20px; text-align:center;" value="${obj.checker}" placeholder="填寫考核人"></td>
             <td style="text-align:center;">
@@ -1359,7 +1370,7 @@
 
   window.saveFreshmanRowInline = (name) => {
     const password = prompt(`🚨 確定要同步聯動更新 [${name}] 的通識考核格子數據嗎？請輸入密碼:`);
-    if (password !== "123456") { alert("密碼錯誤，放棄儲存！"); return; }
+    if (password !== "0000") { alert("密碼錯誤，放棄儲存！"); return; }
 
     const uJoinDate = document.getElementById(`cell_join_${name}`).value;
     const uFactory = document.getElementById(`cell_factory_${name}`).value;
@@ -1382,7 +1393,7 @@
     });
 
     update(ref(db), updates).then(() => {
-      alert(`🎉 [${name}] 的進場日期、廠區與全技能格子(未填已全面防呆粉紅)皆已同步成功！`);
+      alert(`🎉 [${name}] 的進場日期、廠區與全技能格子皆已同步成功！`);
     }).catch(err => alert("同步失敗: " + err));
   };
 
