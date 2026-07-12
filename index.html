@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V57</title>
+  <title>員工評核系統 - V56</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 26px; font-weight: bold; }
     nav { width: 280px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; z-index: 100; }
@@ -43,7 +43,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260712-57</div>
+  <div class="version">版本: 20260712-56</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('skills')">📊 技能總表(⭐導師✓熟手◭半熟手)</div>
@@ -251,7 +251,7 @@
       initFreshmanPageData();
     } else if (page === 'training') {
       // ==========================================
-      // 📋 教育訓練紀錄區 獨立頁面設計 (V57)
+      // 📋 教育訓練紀錄區 獨立頁面設計 (V56)
       // ==========================================
       content.innerHTML = `
         <h1>📋 教育訓練紀錄區</h1>
@@ -259,7 +259,7 @@
         <div class="card" style="border-color: #a855f7;">
           <h3>➕ 建立 / 編輯教育訓練紀錄 (最上方填寫區)</h3>
           <div style="display: flex; gap: 15px; margin-bottom: 12px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 150px;">廠區：<select id="eduFactory"><option value="">請選擇廠區</option></select></div>
+            <div style="flex: 1; min-width: 150px;">廠區：<select id="eduFactory"><option value="">請選擇廠區</option><option value="頂埔廠">頂埔廠</option><option value="民生廠">民生廠</option><option value="海外廠">海外廠</option></select></div>
             <div style="flex: 2; min-width: 250px;">課程名稱：<input type="text" id="eduCourse" placeholder="請輸入課程名稱"></div>
             <div style="flex: 1; min-width: 200px;">訓練日期：<input type="date" id="eduDate"></div>
             <div style="flex: 1; min-width: 200px;">訓練講師：<input type="text" id="eduTeacher" placeholder="講師姓名"></div>
@@ -281,7 +281,7 @@
         <div class="card" style="background: #f1f5f9; border-color: #000;">
           <h3>🔍 教育訓練紀錄複合篩選</h3>
           <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-            <select id="fEduFactory" style="width: auto; min-width: 150px;" onchange="renderTrainingList()"><option value="">所有廠區</option></select>
+            <select id="fEduFactory" style="width: auto; min-width: 150px;" onchange="renderTrainingList()"><option value="">所有廠區</option><option value="頂埔廠">頂埔廠</option><option value="民生廠">民生廠</option><option value="海外廠">海外廠</option></select>
             <select id="fEduCourse" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有課程</option></select>
             <select id="fEduDate" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有日期</option></select>
             <select id="fEduWorker" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有訓練人員</option></select>
@@ -290,20 +290,7 @@
           </div>
         </div>
 
-        <div id="trainingListArea"></div>
-        
-        <hr style="border: 2px dashed #a855f7; margin: 40px 0;">
-        <div class="card" style="border: 4px solid #000; background: #faf5ff;">
-          <h3>⚙️ 教育訓練 廠區名單獨立後台</h3>
-          <div style="background: #fff; padding: 20px; border: 2px solid #000; border-radius: 8px; margin-bottom: 20px;">
-            <h4>➕ 新增或修改廠區</h4>
-            <div style="display: flex; gap: 15px;">
-              <input type="text" id="newEduFactoryName" placeholder="請輸入新廠區名稱 (例如: 竹東廠)">
-              <button class="btn" style="background: #a855f7; white-space: nowrap; font-weight: bold;" onclick="addEduFactory()">新增廠區</button>
-            </div>
-          </div>
-          <div id="eduFactoryConfigArea"></div>
-        </div>`;
+        <div id="trainingListArea"></div>`;
       initTrainingPageData();
     } else if (page === 'admin') {
       const password = prompt("請輸入管理員密碼:");
@@ -691,7 +678,7 @@
     const existingPhoto = window.currentEditPfPhotoBase64 || "";
 
     const doSave = (b64Photo) => {
-      set(ref(db, \`performance_records/\${key}\`), {
+      set(ref(db, `performance_records/${key}`), {
         key: key, leader: leader, name: name, date: date, score: score, recorder: recorder, contentDesc: contentDesc || "", photo: b64Photo || existingPhoto || ""
       }).then(() => {
         alert('🎉 平日績效資料成功同步儲存至雲端！');
@@ -745,23 +732,23 @@
         filteredData.forEach(item => {
           const k = item.key;
           const photoBtnClass = item.photo ? "btn-action btn-has-photo" : "btn-action";
-          const bgStyle = \`background: \${getLeaderColor(item.leader)};\`;
+          const bgStyle = `background: ${getLeaderColor(item.leader)};`;
 
-          html += `<tr style="\${bgStyle}">
-            <td><input type="date" id="pf_inline_date_\${k}" class="table-input" value="\${item.date || ''}"></td>
-            <td style="text-align:center;">\${item.leader || ''}</td>
-            <td style="text-align:center; color:#000;">\${item.name || ''}</td>
-            <td><input type="number" id="pf_inline_score_\${k}" class="table-input" style="text-align:center;" value="\${item.score || 0}"></td>
-            <td><textarea id="pf_inline_desc_\${k}" class="table-input" rows="2" style="text-align:left; resize:vertical;">\${item.contentDesc || ''}</textarea></td>
-            <td><input type="text" id="pf_inline_recorder_\${k}" class="table-input" value="\${item.recorder || ''}"></td>
+          html += `<tr style="${bgStyle}">
+            <td><input type="date" id="pf_inline_date_${k}" class="table-input" value="${item.date || ''}"></td>
+            <td style="text-align:center;">${item.leader || ''}</td>
+            <td style="text-align:center; color:#000;">${item.name || ''}</td>
+            <td><input type="number" id="pf_inline_score_${k}" class="table-input" style="text-align:center;" value="${item.score || 0}"></td>
+            <td><textarea id="pf_inline_desc_${k}" class="table-input" rows="2" style="text-align:left; resize:vertical;">${item.contentDesc || ''}</textarea></td>
+            <td><input type="text" id="pf_inline_recorder_${k}" class="table-input" value="${item.recorder || ''}"></td>
             <td style="text-align:center;">
-              \${item.photo ? \`<button class="\${photoBtnClass}" style="padding:4px 8px; font-size:18px;" onclick="viewImg('\${item.photo}')">📷 檢視</button>\` : '<span style="font-size:18px;color:#475569;">無照片</span>'}
-              <input type="file" id="pf_inline_file_\${k}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
+              ${item.photo ? `<button class="${photoBtnClass}" style="padding:4px 8px; font-size:18px;" onclick="viewImg('${item.photo}')">📷 檢視</button>` : '<span style="font-size:18px;color:#475569;">無照片</span>'}
+              <input type="file" id="pf_inline_file_${k}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
             </td>
             <td style="text-align:center;">
-              <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:4px auto;" onclick="saveInlinePerformance('\${k}', '\${item.leader}', '\${item.name}', '\${item.photo || ''}')" title="同步格子內容">💾 儲存</button>
-              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:4px auto;" onclick="loadToTopPerformanceEditor('\${k}', '\${item.leader}', '\${item.name}', '\${item.date}', '\${item.score}', '\${item.recorder}', \\`\${item.contentDesc || ''}\\`, '\${item.photo || ''}')" title="拉到上方編輯">✏️ 修改</button>
-              <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:4px auto;" onclick="deletePerformanceRecord('\${k}')" title="刪除紀錄">🗑️</button>
+              <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:4px auto;" onclick="saveInlinePerformance('${k}', '${item.leader}', '${item.name}', '${item.photo || ''}')" title="同步格子內容">💾 儲存</button>
+              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:4px auto;" onclick="loadToTopPerformanceEditor('${k}', '${item.leader}', '${item.name}', '${item.date}', '${item.score}', '${item.recorder}', \`${item.contentDesc || ''}\`, '${item.photo || ''}')" title="拉到上方編輯">✏️ 修改</button>
+              <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:4px auto;" onclick="deletePerformanceRecord('${k}')" title="刪除紀錄">🗑️</button>
             </td>
           </tr>`;
         });
@@ -784,7 +771,7 @@
     if(!uDate || isNaN(uScore) || !uRecorder) { alert('欄位不能為空！'); return; }
 
     const updateProcess = (b64) => {
-      set(ref(db, \`performance_records/\${key}\`), {
+      set(ref(db, `performance_records/${key}`), {
         key: parseInt(key), leader: leader, name: name, date: uDate, score: uScore, recorder: uRecorder, contentDesc: uDesc || "", photo: b64 || existingPhoto || ""
       }).then(() => {
         alert('🎉 該列績效內容已在格子內修改完成並同步雲端！');
@@ -805,7 +792,7 @@
       const pfMember = document.getElementById('pfMemberSelect');
       if(pfMember) {
         const members = (s.val() || "").split(',').map(m => m.trim()).filter(m => m);
-        pfMember.innerHTML = members.map(m => `<option value="\${m}">\${m}</option>`).join('');
+        pfMember.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
         pfMember.value = name;
       }
     }, { onlyOnce: true });
@@ -820,7 +807,7 @@
   window.deletePerformanceRecord = (key) => {
     const password = prompt("🚨 警告：此項目將從資料庫中永久刪除，請輸入確認密碼:");
     if (password !== "0000") { alert("密碼錯誤，刪除程序終止！"); return; }
-    if(confirm('確定要永久刪除此筆平日績效紀錄嗎？')) { remove(ref(db, \`performance_records/\${key}\`)).then(() => { alert('資料已成功自雲端刪除！'); renderPerformance(); }); }
+    if(confirm('確定要永久刪除此筆平日績效紀錄嗎？')) { remove(ref(db, `performance_records/${key}`)).then(() => { alert('資料已成功自雲端刪除！'); renderPerformance(); }); }
   };
 
   window.downloadPerformanceCSV = () => {
@@ -845,14 +832,14 @@
       filteredData.forEach((rowObj) => {
         let row = [
           rowObj.date || '', rowObj.leader || '', rowObj.name || '', rowObj.score || '0', rowObj.contentDesc || '', rowObj.recorder || ''
-        ].map(text => `"\${String(text).replace(/"/g, '""')}"`).join(",");
+        ].map(text => `"${String(text).replace(/"/g, '""')}"`).join(",");
         csvContent += row + "\n";
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.setAttribute("download", \`平日績效紀錄報表_\${Date.now()}.csv\`);
+      link.setAttribute("download", `平日績效紀錄報表_${Date.now()}.csv`);
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }, { onlyOnce: true });
   };
@@ -875,14 +862,14 @@
       const factories = Object.keys(window.torqueFullSettings);
 
       if(tqFactorySelect) {
-        tqFactorySelect.innerHTML = factories.map(f => `<option value="\${f}">\${f}</option>`).join('');
+        tqFactorySelect.innerHTML = factories.map(f => `<option value="${f}">${f}</option>`).join('');
         if(savedFactoryVal && factories.includes(savedFactoryVal)) {
           tqFactorySelect.value = savedFactoryVal;
         }
       }
 
       if(fTqFactory) {
-        fTqFactory.innerHTML = '<option value="">所有廠區</option>' + factories.map(f => `<option value="\${f}">\${f}</option>`).join('');
+        fTqFactory.innerHTML = '<option value="">所有廠區</option>' + factories.map(f => `<option value="${f}">${f}</option>`).join('');
         if(savedFilterFactoryVal && factories.includes(savedFilterFactoryVal)) {
           fTqFactory.value = savedFilterFactoryVal;
         }
@@ -902,33 +889,33 @@
     const name = document.getElementById('newTqFactoryName').value.trim();
     if(!name) { alert("請填寫廠區名稱！"); return; }
 
-    set(ref(db, \`torque_v46_settings/\${name}\`), { workers: "", checkers: "" }).then(() => {
-      alert(\`🎉 廠區 [\${name}] 已成功新增！\`);
+    set(ref(db, `torque_v46_settings/${name}`), { workers: "", checkers: "" }).then(() => {
+      alert(`🎉 廠區 [${name}] 已成功新增！`);
       document.getElementById('newTqFactoryName').value = '';
     });
   };
 
   window.deleteTorqueFactory = (factoryName) => {
-    const password = prompt(\`🚨 警告！刪除[\${factoryName}]將移除該廠區配置，請輸入確認密碼:\`);
+    const password = prompt(`🚨 警告！刪除[${factoryName}]將移除該廠區配置，請輸入確認密碼:`);
     if (password !== "123456") { alert("密碼錯誤，拒絕刪除！"); return; }
     
-    if(confirm(\`確定要完全抹除 [\${factoryName}] 嗎？\`)) {
-      remove(ref(db, \`torque_v46_settings/\${factoryName}\`)).then(() => {
-        alert(\`🎉 廠區 [\${factoryName}] 設定已成功自雲端刪除！\`);
+    if(confirm(`確定要完全抹除 [${factoryName}] 嗎？`)) {
+      remove(ref(db, `torque_v46_settings/${factoryName}`)).then(() => {
+        alert(`🎉 廠區 [${factoryName}] 設定已成功自雲端刪除！`);
       });
     }
   };
 
   window.saveTorqueFactoryPersonnel = (factoryName, type) => {
-    const password = prompt(\`🚨 修改 [\${factoryName}] 的人員名單，請輸入驗證密碼:\`);
+    const password = prompt(`🚨 修改 [${factoryName}] 的人員名單，請輸入驗證密碼:`);
     if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
 
     let val = "";
-    if(type === 'workers') val = document.getElementById(\`adm_workers_\${factoryName}\`).value.trim();
-    if(type === 'checkers') val = document.getElementById(\`adm_checkers_\${factoryName}\`).value.trim();
+    if(type === 'workers') val = document.getElementById(`adm_workers_${factoryName}`).value.trim();
+    if(type === 'checkers') val = document.getElementById(`adm_checkers_${factoryName}`).value.trim();
 
-    set(ref(db, \`torque_v46_settings/\${factoryName}/\${type}\`), val).then(() => {
-      alert(\`🎉 [\${factoryName}] 的專屬人員清單儲存成功！\`);
+    set(ref(db, `torque_v46_settings/${factoryName}/${type}`), val).then(() => {
+      alert(`🎉 [${factoryName}] 的專屬人員清單儲存成功！`);
     });
   };
 
@@ -946,18 +933,18 @@
         html += `
           <div style="border: 2px dashed #000; background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="color: #0284c7; font-size: 26px;">🏭 廠區名稱：<b>\${factoryName}</b></span>
-              <button class="btn-action" style="background: #fca5a5; margin: 0;" onclick="deleteTorqueFactory('\${factoryName}')">🗑️ 刪除此廠區</button>
+              <span style="color: #0284c7; font-size: 26px;">🏭 廠區名稱：<b>${factoryName}</b></span>
+              <button class="btn-action" style="background: #fca5a5; margin: 0;" onclick="deleteTorqueFactory('${factoryName}')">🗑️ 刪除此廠區</button>
             </div>
             <div style="margin-bottom: 10px;">
               <b>🛠️ 專屬「作業人員」名單：</b>
-              <input type="text" id="adm_workers_\${factoryName}" value="\${config.workers || ''}">
-              <button class="btn-action" style="background: #67e8f9; font-size: 18px;" onclick="saveTorqueFactoryPersonnel('\${factoryName}', 'workers')">儲存作業人員</button>
+              <input type="text" id="adm_workers_${factoryName}" value="${config.workers || ''}">
+              <button class="btn-action" style="background: #67e8f9; font-size: 18px;" onclick="saveTorqueFactoryPersonnel('${factoryName}', 'workers')">儲存作業人員</button>
             </div>
             <div>
               <b>🔍 專屬「查檢人員」名單：</b>
-              <input type="text" id="adm_checkers_\${factoryName}" value="\${config.checkers || ''}">
-              <button class="btn-action" style="background: #67e8f9; font-size: 18px;" onclick="saveTorqueFactoryPersonnel('\${factoryName}', 'checkers')">儲存查檢人員</button>
+              <input type="text" id="adm_checkers_${factoryName}" value="${config.checkers || ''}">
+              <button class="btn-action" style="background: #67e8f9; font-size: 18px;" onclick="saveTorqueFactoryPersonnel('${factoryName}', 'checkers')">儲存查檢人員</button>
             </div>
           </div>`;
       });
@@ -981,8 +968,8 @@
     const workersArr = (config.workers || "").split(',').map(m => m.trim()).filter(m => m);
     const checkersArr = (config.checkers || "").split(',').map(m => m.trim()).filter(m => m);
 
-    wSelect.innerHTML = workersArr.length ? workersArr.map(m => `<option value="\${m}">\${m}</option>`).join('') : '<option value="">未設定作業人員</option>';
-    cSelect.innerHTML = checkersArr.length ? checkersArr.map(m => `<option value="\${m}">\${m}</option>`).join('') : '<option value="">未設定查檢人員</option>';
+    wSelect.innerHTML = workersArr.length ? workersArr.map(m => `<option value="${m}">${m}</option>`).join('') : '<option value="">未設定作業人員</option>';
+    cSelect.innerHTML = checkersArr.length ? checkersArr.map(m => `<option value="${m}">${m}</option>`).join('') : '<option value="">未設定查檢人員</option>';
   };
 
   window.updateTqFilterDropdowns = () => {
@@ -1008,8 +995,8 @@
     allWorkers = Array.from(new Set(allWorkers));
     allCheckers = Array.from(new Set(allCheckers));
 
-    fwSelect.innerHTML = '<option value="">所有作業人員</option>' + allWorkers.map(m => `<option value="\${m}">\${m}</option>`).join('');
-    fcSelect.innerHTML = '<option value="">所有查檢人員</option>' + allCheckers.map(m => `<option value="\${m}">\${m}</option>`).join('');
+    fwSelect.innerHTML = '<option value="">所有作業人員</option>' + allWorkers.map(m => `<option value="${m}">${m}</option>`).join('');
+    fcSelect.innerHTML = '<option value="">所有查檢人員</option>' + allCheckers.map(m => `<option value="${m}">${m}</option>`).join('');
   };
 
   window.clearTorqueFilters = () => {
@@ -1041,7 +1028,7 @@
     const existingPhoto = window.currentEditTqPhotoBase64 || "";
 
     const processSave = (compressedB64) => {
-      set(ref(db, \`torque_records/\${key}\`), {
+      set(ref(db, `torque_records/${key}`), {
         key: parseInt(key), order, worker, checker, factory, date, checkContent, photo: compressedB64 || existingPhoto || ""
       }).then(() => {
         alert('🎉 藍芽扭力紀錄同步儲存成功！');
@@ -1102,34 +1089,34 @@
           const k = item.key;
           const photoBtnClass = item.photo ? "btn-action btn-has-photo" : "btn-action";
           
-          const fOptions = factoryList.map(f => `<option value="\${f}" \${item.factory===f?'selected':''}>\${f}</option>`).join('');
+          const fOptions = factoryList.map(f => `<option value="${f}" ${item.factory===f?'selected':''}>${f}</option>`).join('');
           
           const currentConfig = window.torqueFullSettings[item.factory] || { workers: "", checkers: "" };
           const curWorkers = (currentConfig.workers || "").split(',').map(m => m.trim()).filter(m => m);
           const curCheckers = (currentConfig.checkers || "").split(',').map(m => m.trim()).filter(m => m);
 
-          const wOptions = curWorkers.map(m => `<option value="\${m}" \${item.worker===m?'selected':''}>\${m}</option>`).join('');
-          const cOptions = curCheckers.map(m => `<option value="\${m}" \${item.checker===m?'selected':''}>\${m}</option>`).join('');
+          const wOptions = curWorkers.map(m => `<option value="${m}" ${item.worker===m?'selected':''}>${m}</option>`).join('');
+          const cOptions = curCheckers.map(m => `<option value="${m}" ${item.checker===m?'selected':''}>${m}</option>`).join('');
 
           html += `<tr style="background:#ffffff;">
-            <td><input type="text" id="tq_inline_order_\${k}" class="table-input" style="text-align:center;" value="\${item.order || ''}"></td>
-            <td><textarea id="tq_inline_content_\${k}" class="table-input" rows="2" style="text-align:left; resize:vertical;">\${item.checkContent || ''}</textarea></td>
-            <td><select id="tq_inline_worker_\${k}" class="table-input" style="text-align:center; padding:2px;">\${wOptions}</select></td>
-            <td><select id="tq_inline_checker_\${k}" class="table-input" style="text-align:center; padding:2px;">\${cOptions}</select></td>
+            <td><input type="text" id="tq_inline_order_${k}" class="table-input" style="text-align:center;" value="${item.order || ''}"></td>
+            <td><textarea id="tq_inline_content_${k}" class="table-input" rows="2" style="text-align:left; resize:vertical;">${item.checkContent || ''}</textarea></td>
+            <td><select id="tq_inline_worker_${k}" class="table-input" style="text-align:center; padding:2px;">${wOptions}</select></td>
+            <td><select id="tq_inline_checker_${k}" class="table-input" style="text-align:center; padding:2px;">${cOptions}</select></td>
             <td>
-              <select id="tq_inline_factory_\${k}" class="table-input" style="text-align:center; padding:2px;" onchange="handleInlineFactoryChange('\${k}')">
-                \${fOptions}
+              <select id="tq_inline_factory_${k}" class="table-input" style="text-align:center; padding:2px;" onchange="handleInlineFactoryChange('${k}')">
+                ${fOptions}
               </select>
             </td>
-            <td><input type="date" id="tq_inline_date_\${k}" class="table-input" value="\${item.date || ''}"></td>
+            <td><input type="date" id="tq_inline_date_${k}" class="table-input" value="${item.date || ''}"></td>
             <td style="text-align:center;">
-              \${item.photo ? \`<button class="\${photoBtnClass}" style="padding:6px 12px; font-size:20px;" onclick="viewImg('\${item.photo}')">📷</button>\` : '<span style="font-size:18px;color:#94a3b8;">無</span>'}
-              <input type="file" id="tq_inline_file_\${k}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
+              ${item.photo ? `<button class="${photoBtnClass}" style="padding:6px 12px; font-size:20px;" onclick="viewImg('${item.photo}')">📷</button>` : '<span style="font-size:18px;color:#94a3b8;">無</span>'}
+              <input type="file" id="tq_inline_file_${k}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
             </td>
             <td style="text-align:center;">
-              <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:3px auto;" onclick="saveInlineTorque('\${k}', '\${item.photo || ''}')" title="同步格子內容">💾</button>
-              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:3px auto;" onclick="loadToTopTorqueEditor('\${k}', '\${item.order}', '\${item.worker}', '\${item.checker}', '\${item.factory}', '\${item.date}', \\`\${item.checkContent || ''}\\`, '\${item.photo || ''}')" title="拉回上方修改">✏️</button>
-              <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:3px auto;" onclick="deleteTorqueRecord('\${k}')" title="刪除紀錄">🗑️</button>
+              <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:3px auto;" onclick="saveInlineTorque('${k}', '${item.photo || ''}')" title="同步格子內容">💾</button>
+              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:3px auto;" onclick="loadToTopTorqueEditor('${k}', '${item.order}', '${item.worker}', '${item.checker}', '${item.factory}', '${item.date}', \`${item.checkContent || ''}\`, '${item.photo || ''}')" title="拉回上方修改">✏️</button>
+              <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:3px auto;" onclick="deleteTorqueRecord('${k}')" title="刪除紀錄">🗑️</button>
             </td>
           </tr>`;
         });
@@ -1149,8 +1136,8 @@
     const curWorkers = (currentConfig.workers || "").split(',').map(m => m.trim()).filter(m => m);
     const curCheckers = (currentConfig.checkers || "").split(',').map(m => m.trim()).filter(m => m);
 
-    wSelect.innerHTML = curWorkers.map(m => `<option value="\${m}">\${m}</option>`).join('');
-    cSelect.innerHTML = curCheckers.map(m => `<option value="\${m}">\${m}</option>`).join('');
+    wSelect.innerHTML = curWorkers.map(m => `<option value="${m}">${m}</option>`).join('');
+    cSelect.innerHTML = curCheckers.map(m => `<option value="${m}">${m}</option>`).join('');
   };
 
   window.saveInlineTorque = (key, existingPhoto) => {
@@ -1168,7 +1155,7 @@
     if(!uOrder || !uContent || !uWorker || !uChecker || !uFactory || !uDate) { alert('查檢資料各欄位皆不允許空白！'); return; }
 
     const performUpdate = (b64) => {
-      set(ref(db, \`torque_records/\${key}\`), {
+      set(ref(db, `torque_records/${key}`), {
         key: parseInt(key), order: uOrder, checkContent: uContent, worker: uWorker, checker: uChecker, factory: uFactory, date: uDate, photo: b64 || existingPhoto || ""
       }).then(() => {
         alert('🎉 藍芽扭力紀錄更新成功！');
@@ -1202,7 +1189,7 @@
     const password = prompt("🚨 警告：此項目將從資料庫中永久抹除，請輸入確認密碼:");
     if (password !== "123456") { alert("密碼錯誤，刪除無效！"); return; }
     if(confirm('確定要永久刪除此筆藍芽扭力紀錄嗎？')) {
-      remove(ref(db, \`torque_records/\${key}\`)).then(() => { alert('資料已成功自雲端刪除！'); renderTorqueList(); });
+      remove(ref(db, `torque_records/${key}`)).then(() => { alert('資料已成功自雲端刪除！'); renderTorqueList(); });
     }
   };
 
@@ -1223,7 +1210,7 @@
       const fList = Object.keys(factData);
       const selectEl = document.getElementById('fmFactorySelect');
       if(selectEl) {
-        selectEl.innerHTML = '<option value="">請選擇廠區</option>' + fList.map(f => `<option value="\${f}">\${f}</option>`).join('');
+        selectEl.innerHTML = '<option value="">請選擇廠區</option>' + fList.map(f => `<option value="${f}">${f}</option>`).join('');
       }
 
       onValue(ref(db, 'freshman_config'), (snap) => {
@@ -1238,7 +1225,7 @@
         if(fFilter) {
           const savedVal = fFilter.value;
           const nameList = (cfg.names || "").split(',').map(n => n.trim()).filter(n => n);
-          fFilter.innerHTML = '<option value="">顯示全部新人</option>' + nameList.map(n => `<option value="\${n}">\${n}</option>`).join('');
+          fFilter.innerHTML = '<option value="">顯示全部新人</option>' + nameList.map(n => `<option value="${n}">${n}</option>`).join('');
           if(nameList.includes(savedVal)) fFilter.value = savedVal;
         }
 
@@ -1279,8 +1266,8 @@
     area.innerHTML = `
       <div style="background: #e2e8f0; padding: 15px; border-radius: 8px; border: 2px solid #000;">
         <p style="margin: 0 0 8px 0; font-size: 22px;">💡 <b>目前定義框架總覽：</b></p>
-        <div>👥 <b>建立的新人 (\${namesArr.length} 位)：</b> \${namesArr.map(n => \`<span style="background:#fff; padding:3px 8px; border:1px solid #000; border-radius:4px; margin-right:5px; display:inline-block;">\${n}</span>\`).join('')}</div>
-        <div style="margin-top: 10px;">🛠️ <b>通識技能橫軸 (\${skillsArr.length} 項)：</b> \${skillsArr.map(s => \`<span style="background:#fff; padding:3px 8px; border:1px solid #000; border-radius:4px; margin-right:5px; display:inline-block;">\${s}</span>\`).join('')}</div>
+        <div>👥 <b>建立的新人 (${namesArr.length} 位)：</b> ${namesArr.map(n => `<span style="background:#fff; padding:3px 8px; border:1px solid #000; border-radius:4px; margin-right:5px; display:inline-block;">${n}</span>`).join('')}</div>
+        <div style="margin-top: 10px;">🛠️ <b>通識技能橫軸 (${skillsArr.length} 項)：</b> ${skillsArr.map(s => `<span style="background:#fff; padding:3px 8px; border:1px solid #000; border-radius:4px; margin-right:5px; display:inline-block;">${s}</span>`).join('')}</div>
       </div>`;
   }
 
@@ -1310,8 +1297,8 @@
       let updates = {};
       skillInputArr.forEach(sk => {
         if(!curSkills.includes(sk)) curSkills.push(sk);
-        const itemKey = \`\${name}__\${sk}\`;
-        updates[\`freshman_records/\${itemKey}\`] = {
+        const itemKey = `${name}__${sk}`;
+        updates[`freshman_records/${itemKey}`] = {
           name: name,
           joinDate: joinDate || "",
           factory: factory || "",
@@ -1346,7 +1333,7 @@
       let checkerVal = "";
 
       skillsArr.forEach(sk => {
-        const key = \`\${name}__\${sk}\`;
+        const key = `${name}__${sk}`;
         if(records[key]) {
           if(records[key].joinDate && records[key].joinDate > maxJoinDate) maxJoinDate = records[key].joinDate;
           if(records[key].factory) factoryVal = records[key].factory;
@@ -1374,44 +1361,44 @@
           <th style="width: 150px; text-align:center; background:#cbd5e1;">人員名稱</th>
           <th style="width: 180px; text-align:center; background:#cbd5e1;">進場日期</th>
           <th style="width: 180px; text-align:center; background:#bae6fd;">廠區</th>
-          \${skillsArr.map(sk => \`<th style="text-align:center; min-width:160px;">\${sk}</th>\`).join('')}
+          ${skillsArr.map(sk => `<th style="text-align:center; min-width:160px;">${sk}</th>`).join('')}
           <th style="width: 180px; text-align:center; background:#93c5fd;">考核人員</th>
           <th style="width: 100px; text-align:center; background:#cbd5e1;">即時聯動</th>
         </tr>`;
 
       if(nameObjects.length === 0) {
-        html += `<tr><td colspan="\${skillsArr.length + 5}" style="text-align:center; color:#94a3b8;">目前尚無設定新人名單數據。</td></tr>`;
+        html += `<tr><td colspan="${skillsArr.length + 5}" style="text-align:center; color:#94a3b8;">目前尚無設定新人名單數據。</td></tr>`;
       } else {
         nameObjects.forEach(obj => {
           const name = obj.name;
           const displayJoinDate = obj.joinDate === "0000-00-00" ? "" : obj.joinDate;
 
           html += `<tr>
-            <td style="text-align:center; background:#f8fafc; color:#000;">👤 <b>\${name}</b></td>
-            <td><input type="date" id="cell_join_\${name}" class="table-input" style="padding:4px; font-size:20px;" value="\${displayJoinDate}"></td>
+            <td style="text-align:center; background:#f8fafc; color:#000;">👤 <b>${name}</b></td>
+            <td><input type="date" id="cell_join_${name}" class="table-input" style="padding:4px; font-size:20px;" value="${displayJoinDate}"></td>
             <td>
-              <select id="cell_factory_\${name}" class="table-input" style="padding:4px; font-size:20px; text-align:center;">
+              <select id="cell_factory_${name}" class="table-input" style="padding:4px; font-size:20px; text-align:center;">
                 <option value="">未填廠區</option>
-                \${factoryList.map(f => \`<option value="\${f}" \${obj.factory===f?'selected':''}>\${f}</option>\`).join('')}
+                ${factoryList.map(f => `<option value="${f}" ${obj.factory===f?'selected':''}>${f}</option>`).join('')}
               </select>
             </td>`;
             
             skillsArr.forEach(sk => {
-              const key = \`\${name}__\${sk}\`;
+              const key = `${name}__${sk}`;
               const curRec = records[key] || {};
               const dVal = curRec.doneDate || "";
               
               const cellStyle = dVal ? "background-color: #dcfce7;" : "background-color: #ffe4e6; color: #ff0000;";
 
-              html += `<td style="\${cellStyle}">
-                <input type="date" id="cell_done_\${name}__\${sk}" class="table-input" style="padding:4px; font-size:20px; \${cellStyle}" value="\${dVal}">
+              html += `<td style="${cellStyle}">
+                <input type="date" id="cell_done_${name}__${sk}" class="table-input" style="padding:4px; font-size:20px; ${cellStyle}" value="${dVal}">
               </td>`;
             });
 
             html += `
-            <td><input type="text" id="cell_check_\${name}" class="table-input" style="padding:4px; font-size:20px; text-align:center;" value="\${obj.checker || ''}" placeholder="填寫考核人"></td>
+            <td><input type="text" id="cell_check_${name}" class="table-input" style="padding:4px; font-size:20px; text-align:center;" value="${obj.checker || ''}" placeholder="填寫考核人"></td>
             <td style="text-align:center;">
-              <button class="btn-action btn-action-sm" style="background:#86efac; margin:0; padding:6px 12px !important;" onclick="saveFreshmanRowInline('\${name}')" title="聯動更新雲端">💾</button>
+              <button class="btn-action btn-action-sm" style="background:#86efac; margin:0; padding:6px 12px !important;" onclick="saveFreshmanRowInline('${name}')" title="聯動更新雲端">💾</button>
             </td>
           </tr>`;
         });
@@ -1423,20 +1410,20 @@
   };
 
   window.saveFreshmanRowInline = (name) => {
-    const password = prompt(\`🚨 確定要同步聯動更新 [\${name}] 的通識考核格子數據嗎？請輸入密碼:\`);
+    const password = prompt(`🚨 確定要同步聯動更新 [${name}] 的通識考核格子數據嗎？請輸入密碼:`);
     if (password !== "0000") { alert("密碼錯誤，放棄儲存！"); return; }
 
-    const uJoinDate = document.getElementById(\`cell_join_\${name}\`).value;
-    const uFactory = document.getElementById(\`cell_factory_\${name}\`).value;
-    const uChecker = document.getElementById(\`cell_check_\${name}\`).value.trim();
+    const uJoinDate = document.getElementById(`cell_join_${name}`).value;
+    const uFactory = document.getElementById(`cell_factory_${name}`).value;
+    const uChecker = document.getElementById(`cell_check_${name}`).value.trim();
     const skillsArr = window.freshmanDataCache.skills.split(',').map(s => s.trim()).filter(s => s);
 
     let updates = {};
     skillsArr.forEach(sk => {
-      const key = \`\${name}__\${sk}\`;
-      const uDoneDate = document.getElementById(\`cell_done_\${name}__\${sk}\`).value;
+      const key = `${name}__${sk}`;
+      const uDoneDate = document.getElementById(`cell_done_${name}__${sk}`).value;
 
-      updates[\`freshman_records/\${key}\`] = {
+      updates[`freshman_records/${key}`] = {
         name: name,
         joinDate: uJoinDate,
         factory: uFactory,
@@ -1447,16 +1434,14 @@
     });
 
     update(ref(db), updates).then(() => {
-      alert(\`🎉 [\${name}] 的進場日期、廠區與全技能格子皆已同步成功！\`);
+      alert(`🎉 [${name}] 的進場日期、廠區與全技能格子皆已同步成功！`);
     }).catch(err => alert("同步失敗: " + err));
   };
 
 
   // =========================================================================
-  // 📋 教育訓練紀錄區 核心邏輯 (V57 精密升級開發)
+  // 📋 教育訓練紀錄區 核心邏輯 (V56 精密升級開發)
   // =========================================================================
-
-  window.eduFactories = {};
 
   function initTrainingPageData() {
     // 載入教育訓練人員名單暫存區
@@ -1464,30 +1449,6 @@
       const pad = document.getElementById('eduScratchpad');
       if (pad) { pad.value = s.val() || ""; }
     }, { onlyOnce: true });
-
-    // 載入廠區資料
-    onValue(ref(db, 'training_factories'), (s) => {
-      const dbFactories = s.val();
-      if (!dbFactories) {
-        window.eduFactories = { '竹東廠': true, '模冠': true, '御弘': true, '宏田': true };
-        set(ref(db, 'training_factories'), window.eduFactories);
-      } else {
-        window.eduFactories = dbFactories;
-      }
-      
-      const fList = Object.keys(window.eduFactories);
-      const eduFactory = document.getElementById('eduFactory');
-      if(eduFactory) eduFactory.innerHTML = '<option value="">請選擇廠區</option>' + fList.map(f => `<option value="\${f}">\${f}</option>`).join('');
-      
-      const fEduFactory = document.getElementById('fEduFactory');
-      if(fEduFactory) {
-        const savedVal = fEduFactory.value;
-        fEduFactory.innerHTML = '<option value="">所有廠區</option>' + fList.map(f => `<option value="\${f}">\${f}</option>`).join('');
-        if (savedVal && fList.includes(savedVal)) fEduFactory.value = savedVal;
-      }
-      
-      renderEduFactoryAdminHTML();
-    });
 
     const today = new Date().toISOString().split('T')[0];
     const dateEl = document.getElementById('eduDate');
@@ -1517,62 +1478,27 @@
 
       if(fEduCourse) {
         const saved = fEduCourse.value;
-        fEduCourse.innerHTML = '<option value="">所有課程</option>' + Array.from(courses).map(c => `<option value="\${c}">\${c}</option>`).join('');
+        fEduCourse.innerHTML = '<option value="">所有課程</option>' + Array.from(courses).map(c => `<option value="${c}">${c}</option>`).join('');
         fEduCourse.value = saved;
       }
       if(fEduDate) {
         const saved = fEduDate.value;
-        fEduDate.innerHTML = '<option value="">所有日期</option>' + Array.from(dates).map(d => `<option value="\${d}">\${d}</option>`).join('');
+        fEduDate.innerHTML = '<option value="">所有日期</option>' + Array.from(dates).map(d => `<option value="${d}">${d}</option>`).join('');
         fEduDate.value = saved;
       }
       if(fEduWorker) {
         const saved = fEduWorker.value;
-        fEduWorker.innerHTML = '<option value="">所有訓練人員</option>' + Array.from(workers).map(w => `<option value="\${w}">\${w}</option>`).join('');
+        fEduWorker.innerHTML = '<option value="">所有訓練人員</option>' + Array.from(workers).map(w => `<option value="${w}">${w}</option>`).join('');
         fEduWorker.value = saved;
       }
       if(fEduTeacher) {
         const saved = fEduTeacher.value;
-        fEduTeacher.innerHTML = '<option value="">所有講師</option>' + Array.from(teachers).map(t => `<option value="\${t}">\${t}</option>`).join('');
+        fEduTeacher.innerHTML = '<option value="">所有講師</option>' + Array.from(teachers).map(t => `<option value="${t}">${t}</option>`).join('');
         fEduTeacher.value = saved;
       }
 
       renderTrainingList();
     });
-  }
-
-  window.addEduFactory = () => {
-    const name = document.getElementById('newEduFactoryName').value.trim();
-    if (!name) { alert("請輸入廠區名稱！"); return; }
-    set(ref(db, \`training_factories/\${name}\`), true).then(() => {
-      alert(\`🎉 廠區 [\${name}] 已成功新增！\`);
-      document.getElementById('newEduFactoryName').value = '';
-    });
-  };
-
-  window.deleteEduFactory = (name) => {
-    if(confirm(\`確定要刪除廠區 [\${name}] 嗎？\`)) {
-      remove(ref(db, \`training_factories/\${name}\`)).then(() => {
-        alert(\`廠區 [\${name}] 已刪除！\`);
-      });
-    }
-  };
-
-  function renderEduFactoryAdminHTML() {
-    const container = document.getElementById('eduFactoryConfigArea');
-    if(!container) return;
-    const factories = Object.keys(window.eduFactories || {});
-    let html = '<h4>目前廠區名單：</h4>';
-    if(factories.length === 0) {
-      html += '<p>目前尚無廠區</p>';
-    } else {
-      factories.forEach(f => {
-        html += \`<div style="display:inline-block; margin:5px; padding:10px; background:#fff; border:2px solid #000; border-radius:8px;">
-          <span style="font-size:22px; margin-right:10px;">🏭 \${f}</span>
-          <button class="btn-action btn-action-sm" style="background:#fca5a5; margin:0;" onclick="deleteEduFactory('\${f}')">🗑️ 刪除</button>
-        </div>\`;
-      });
-    }
-    container.innerHTML = html;
   }
 
   window.saveEduScratchpad = () => {
@@ -1611,7 +1537,7 @@
       if (window.currentEditEduKey) {
         // 單筆資料修改
         const key = window.currentEditEduKey;
-        set(ref(db, \`training_records/\${key}\`), {
+        set(ref(db, `training_records/${key}`), {
           key: parseInt(key), factory, course, date, teacher, workers: workersRaw, photo: compressedB64 || existingPhoto || ""
         }).then(() => {
           alert("🎉 教育訓練紀錄修改成功並同步發送至雲端！");
@@ -1621,12 +1547,12 @@
         // 多人名單建立與批次拆分獨立儲存
         let promises = workersArray.map((worker, index) => {
           const key = Date.now() + index;
-          return set(ref(db, \`training_records/\${key}\`), {
+          return set(ref(db, `training_records/${key}`), {
             key: key, factory, course, date, teacher, workers: worker, photo: compressedB64 || ""
           });
         });
         Promise.all(promises).then(() => {
-          alert(\`🎉 成功建立並拆分為 \${workersArray.length} 筆獨立教育訓練紀錄！\`);
+          alert(`🎉 成功建立並拆分為 ${workersArray.length} 筆獨立教育訓練紀錄！`);
           clearTrainingInputs();
         }).catch(err => alert("同步雲端失敗: " + err));
       }
@@ -1690,24 +1616,24 @@
           const k = item.key;
           const photoBtnClass = item.photo ? "btn-action btn-has-photo" : "btn-action";
           
-          let fOptions = Object.keys(window.eduFactories || {});
+          let fOptions = ['頂埔廠', '民生廠', '海外廠'];
           if(item.factory && !fOptions.includes(item.factory)) fOptions.push(item.factory);
-          let selectHtml = \`<select id="edu_inline_factory_\${k}" class="table-input" style="padding:2px; text-align:center;">\` + fOptions.map(f => \`<option value="\${f}" \${item.factory===f?'selected':''}>\${f}</option>\`).join('') + \`</select>\`;
+          let selectHtml = `<select id="edu_inline_factory_${k}" class="table-input" style="padding:2px; text-align:center;">` + fOptions.map(f => `<option value="${f}" ${item.factory===f?'selected':''}>${f}</option>`).join('') + `</select>`;
 
           html += `<tr style="background:#ffffff;">
-            <td>\${selectHtml}</td>
-            <td><input type="text" id="edu_inline_workers_\${k}" class="table-input" value="\${item.workers || ''}"></td>
-            <td><input type="text" id="edu_inline_course_\${k}" class="table-input" value="\${item.course || ''}"></td>
-            <td><input type="date" id="edu_inline_date_\${k}" class="table-input" style="text-align:center;" value="\${item.date || ''}"></td>
-            <td><input type="text" id="edu_inline_teacher_\${k}" class="table-input" style="text-align:center;" value="\${item.teacher || ''}"></td>
+            <td>${selectHtml}</td>
+            <td><input type="text" id="edu_inline_workers_${k}" class="table-input" value="${item.workers || ''}"></td>
+            <td><input type="text" id="edu_inline_course_${k}" class="table-input" value="${item.course || ''}"></td>
+            <td><input type="date" id="edu_inline_date_${k}" class="table-input" style="text-align:center;" value="${item.date || ''}"></td>
+            <td><input type="text" id="edu_inline_teacher_${k}" class="table-input" style="text-align:center;" value="${item.teacher || ''}"></td>
             <td style="text-align:center;">
-              \${item.photo ? \`<button class="\${photoBtnClass}" style="padding:6px 12px; font-size:20px;" onclick="viewImg('\${item.photo}')">📷</button>\` : '<span style="font-size:18px;color:#94a3b8;">無</span>'}
-              <input type="file" id="edu_inline_file_\${k}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
+              ${item.photo ? `<button class="${photoBtnClass}" style="padding:6px 12px; font-size:20px;" onclick="viewImg('${item.photo}')">📷</button>` : '<span style="font-size:18px;color:#94a3b8;">無</span>'}
+              <input type="file" id="edu_inline_file_${k}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
             </td>
             <td style="text-align:center;">
-              <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:3px auto;" onclick="saveInlineTraining('\${k}', '\${item.photo || ''}')" title="格子直改儲存">💾 儲存</button>
-              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:3px auto;" onclick="loadToTopTrainingEditor('\${k}', '\${item.factory || ''}', \\`\${item.course}\\`, '\${item.date}', \\`\${item.teacher}\\`, \\`\${item.workers}\\`, '\${item.photo || ''}')" title="回填上方控制台">✏️ 修改</button>
-              <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:3px auto;" onclick="deleteTrainingRecord('\${k}')" title="永久刪除">🗑️</button>
+              <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:3px auto;" onclick="saveInlineTraining('${k}', '${item.photo || ''}')" title="格子直改儲存">💾 儲存</button>
+              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:3px auto;" onclick="loadToTopTrainingEditor('${k}', '${item.factory || ''}', \`${item.course}\`, '${item.date}', \`${item.teacher}\`, \`${item.workers}\`, '${item.photo || ''}')" title="回填上方控制台">✏️ 修改</button>
+              <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:3px auto;" onclick="deleteTrainingRecord('${k}')" title="永久刪除">🗑️</button>
             </td>
           </tr>`;
         });
@@ -1719,17 +1645,17 @@
   };
 
   window.saveInlineTraining = (key, existingPhoto) => {
-    const uFactory = document.getElementById(\`edu_inline_factory_\${key}\`).value;
-    const uCourse = document.getElementById(\`edu_inline_course_\${key}\`).value.trim();
-    const uDate = document.getElementById(\`edu_inline_date_\${key}\`).value;
-    const uTeacher = document.getElementById(\`edu_inline_teacher_\${key}\`).value.trim();
-    const uWorkers = document.getElementById(\`edu_inline_workers_\${key}\`).value.trim();
-    const fileEl = document.getElementById(\`edu_inline_file_\${key}\`).files[0];
+    const uFactory = document.getElementById(`edu_inline_factory_${key}`).value;
+    const uCourse = document.getElementById(`edu_inline_course_${key}`).value.trim();
+    const uDate = document.getElementById(`edu_inline_date_${key}`).value;
+    const uTeacher = document.getElementById(`edu_inline_teacher_${key}`).value.trim();
+    const uWorkers = document.getElementById(`edu_inline_workers_${key}`).value.trim();
+    const fileEl = document.getElementById(`edu_inline_file_${key}`).files[0];
 
     if(!uFactory || !uCourse || !uDate || !uTeacher || !uWorkers) { alert("各欄位內容不允許留空！"); return; }
 
     const performEduUpdate = (b64) => {
-      set(ref(db, \`training_records/\${key}\`), {
+      set(ref(db, `training_records/${key}`), {
         key: parseInt(key), factory: uFactory, course: uCourse, date: uDate, teacher: uTeacher, workers: uWorkers, photo: b64 || existingPhoto || ""
       }).then(() => {
         alert("🎉 教育訓練格子直改成功！雲端數據已更新同步！");
@@ -1755,7 +1681,7 @@
 
   window.deleteTrainingRecord = (key) => {
     if(confirm("確定要永久刪除此筆教育訓練紀錄嗎？")) {
-      remove(ref(db, \`training_records/\${key}\`)).then(() => { alert("資料已成功自雲端刪除！"); renderTrainingList(); });
+      remove(ref(db, `training_records/${key}`)).then(() => { alert("資料已成功自雲端刪除！"); renderTrainingList(); });
     }
   };
 
