@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V53</title>
+  <title>員工評核系統 - V54</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 26px; font-weight: bold; }
     nav { width: 280px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; z-index: 100; }
@@ -15,7 +15,6 @@
     .btn-action { padding: 10px 16px; margin: 4px; cursor: pointer; border-radius: 5px; border: 2px solid #000; font-weight: bold; font-size: 20px; color: #000; }
     input, select, textarea { padding: 14px; margin: 8px 0; border: 3px solid #000; border-radius: 8px; width: 100%; font-size: 24px; font-weight: bold; color: #000; background: #fff; box-sizing: border-box; }
     
-    /* 表格內輸入框、下拉選單、文字域字體加大 */
     .table-input { font-size: 24px; font-weight: bold; color: #000; background: rgba(255,255,255,0.75); border: 2px solid #000; margin: 0; padding: 8px; width: 100%; }
     
     .version { font-size: 18px; color: #475569; margin-bottom: 20px; font-weight: bold; }
@@ -25,7 +24,6 @@
     .gradient-bg { background: linear-gradient(135deg, #e9d5ff, #f5d0fe); color: #000; padding: 40px; border-radius: 20px; border: 3px solid #a855f7; }
     .eval-card { display: inline-block; width: 260px; text-align: center; padding: 20px; border: 3px solid #000; border-radius: 15px; margin: 10px; background: white; color: #000; }
     
-    /* 圓形進度條樣式 */
     .circle-progress { width: 130px; height: 130px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 15px auto; font-size: 30px; color: #000; font-weight: 900; box-sizing: border-box; }
     .p-0 { border: 10px solid #ef4444; background: #fee2e2; }
     .p-20 { border: 10px solid #f97316; background: #ffedd5; }
@@ -34,10 +32,8 @@
     .p-80 { border: 10px solid #a855f7; background: #f3e8ff; }
     .p-100 { border: 10px solid #22c55e; background: #dcfce7; }
 
-    /* 有照片特別顯示樣式 */
     .btn-has-photo { border: 4px dashed #ff00ff !important; background: #f5d0fe !important; font-weight: 900 !important; }
 
-    /* 表格欄位寬度與操作按鈕優化 */
     .col-cat { width: 80px !important; text-align: center !important; }
     .col-score { width: 70px !important; text-align: center !important; }
     .col-action { width: 120px !important; text-align: center !important; }
@@ -47,11 +43,12 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260712-53</div>
+  <div class="version">版本: 20260712-54</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('skills')">📊 技能總表(⭐導師)</div>
   <div onclick="showPage('freshman')">📊 新人通識紀錄區</div>
+  <div onclick="showPage('training')">📋 教育訓練紀錄區</div>
   <div onclick="showPage('6s')">✅ 6S Check</div>
   <div onclick="showPage('performance')">📈 平日績效紀錄表</div>
   <div onclick="showPage('torque')">📡 藍芽扭力回報區</div>
@@ -74,10 +71,13 @@
   window.currentEditPfKey = null;
   window.currentEditPfPhotoBase64 = null;
   
-  // 藍芽扭力專用全域變數
   window.currentEditTqKey = null;
   window.currentEditTqPhotoBase64 = null;
-  window.torqueFullSettings = {}; // 快取結構: { 廠區名: { workers: [], checkers: [] } }
+  window.torqueFullSettings = {}; 
+
+  // 教育訓練紀錄區專用全域變數
+  window.currentEditEduKey = null;
+  window.currentEditEduPhotoBase64 = null;
   
   const categoryColors = { 
     "整理": "#ffdee2", "整頓": "#e0f2fe", "清掃": "#fff7ed", "清潔": "#dcfce7", "作法": "#fef08a", "紀律": "#fed7aa", "素養": "#f3e8ff", "安全": "#fee2e2" 
@@ -210,7 +210,6 @@
     } else if (page === 'freshman') {
       content.innerHTML = `
         <h1>📊 新人通識紀錄區</h1>
-        
         <div class="card" style="border-color: #22c55e; background: #f0fdf4;">
           <h3>🔍 新人通識即時看板 (進場越晚越靠上呈現)</h3>
           <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
@@ -219,7 +218,6 @@
           </div>
           <div id="freshmanTableContainer" style="overflow-x: auto;"></div>
         </div>
-
         <div class="card" style="border-color: #f59e0b;">
           <h3>➕ 新增 / 調整通識紀錄 (中間控制台)</h3>
           <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
@@ -234,7 +232,6 @@
           </div>
           <button class="btn" style="background: #f59e0b;" onclick="saveFreshmanControlRecord()">💾 新增通識項目與連結</button>
         </div>
-
         <div class="card" style="border: 4px solid #000; background: #fafafa;">
           <h3>⚙️ 新人通識 基礎結構維護區</h3>
           <div style="display: flex; gap: 15px; flex-wrap: wrap;">
@@ -252,6 +249,46 @@
           <div id="freshmanStructureManagementArea" style="margin-top: 20px;"></div>
         </div>`;
       initFreshmanPageData();
+    } else if (page === 'training') {
+      // ==========================================
+      // 📋 教育訓練紀錄區 獨立頁面設計
+      // ==========================================
+      content.innerHTML = `
+        <h1>📋 教育訓練紀錄區</h1>
+        
+        <div class="card" style="border-color: #a855f7;">
+          <h3>➕ 建立 / 編輯教育訓練紀錄 (最上方填寫區)</h3>
+          <div style="display: flex; gap: 15px; margin-bottom: 12px; flex-wrap: wrap;">
+            <div style="flex: 2; min-width: 250px;">課程名稱：<input type="text" id="eduCourse" placeholder="請輸入課程名稱"></div>
+            <div style="flex: 1; min-width: 200px;">訓練日期：<input type="date" id="eduDate"></div>
+            <div style="flex: 1; min-width: 200px;">訓練講師：<input type="text" id="eduTeacher" placeholder="講師姓名"></div>
+          </div>
+          <div style="margin-bottom: 12px;">
+            訓練人員 (多人請使用英文逗號 "," 隔開)：
+            <input type="text" id="eduWorkers" placeholder="例如: 張三, 李四, 王五">
+          </div>
+          <div style="margin: 15px 0; font-size: 24px;">訓練照片上傳：<input type="file" id="eduPhotoFile" accept="image/*"></div>
+          <button class="btn" style="background: #a855f7;" onclick="saveTrainingRecord()">💾 儲存訓練資料至雲端</button>
+        </div>
+
+        <div class="card" style="border-color: #64748b; background: #f8fafc;">
+          <h3>📋 人員資料暫存區 (方便輸入時複製使用)</h3>
+          <textarea id="eduScratchpad" rows="3" placeholder="可在這裡臨時貼上或編輯人員名單，以便複製到上方訓練人員欄位內..." style="font-size:22px; color:#475569; font-weight:normal;"></textarea>
+        </div>
+
+        <div class="card" style="background: #f1f5f9; border-color: #000;">
+          <h3>🔍 教育訓練紀錄複合篩選</h3>
+          <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+            <select id="fEduCourse" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有課程</option></select>
+            <select id="fEduDate" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有日期</option></select>
+            <select id="fEduWorker" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有訓練人員</option></select>
+            <select id="fEduTeacher" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有講師</option></select>
+            <button class="btn" style="background: #64748b; padding: 10px 16px; font-size: 20px;" onclick="clearTrainingFilters()">重置篩選</button>
+          </div>
+        </div>
+
+        <div id="trainingListArea"></div>`;
+      initTrainingPageData();
     } else if (page === 'admin') {
       const password = prompt("請輸入管理員密碼:");
       if (password !== "0000") { alert("密碼錯誤！"); return; }
@@ -805,7 +842,7 @@
 
 
   // =========================================================================
-  // 📡 藍芽扭力回報區 (完美對齊指定順序：1製令➔2抽查➔3作業➔4查檢➔5廠區➔6日期)
+  // 📡 藍芽扭力回報區
   // =========================================================================
 
   function initTorquePageData() {
@@ -968,7 +1005,7 @@
 
   window.saveTorqueRecord = () => {
     const password = prompt("🚨 新增/修改藍芽扭力紀錄，請輸入專屬驗證密碼:");
-    if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
+    if (password !== "123456") { alert("密碼錯誤，拒密儲存！"); return; }
 
     const order = document.getElementById('tqOrder').value.trim();
     const worker = document.getElementById('tqWorkerSelect').value;
@@ -1074,7 +1111,7 @@
             </td>
             <td style="text-align:center;">
               <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:3px auto;" onclick="saveInlineTorque('${k}', '${item.photo || ''}')" title="同步格子內容">💾</button>
-              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:95% auto;" onclick="loadToTopTorqueEditor('${k}', '${item.order}', '${item.worker}', '${item.checker}', '${item.factory}', '${item.date}', \`${item.checkContent || ''}\`, '${item.photo || ''}')" title="拉回上方修改">✏️</button>
+              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:3px auto;" onclick="loadToTopTorqueEditor('${k}', '${item.order}', '${item.worker}', '${item.checker}', '${item.factory}', '${item.date}', \`${item.checkContent || ''}\`, '${item.photo || ''}')" title="拉回上方修改">✏️</button>
               <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:3px auto;" onclick="deleteTorqueRecord('${k}')" title="刪除紀錄">🗑️</button>
             </td>
           </tr>`;
@@ -1154,7 +1191,7 @@
 
 
   // =========================================================================
-  // 📝 📊 新人通識紀錄區 核心邏輯 (V52 廠區整合、未填粉紅防呆、最新進場置頂)
+  // 📝 📊 新人通識紀錄區 核心邏輯
   // =========================================================================
 
   window.freshmanDataCache = { list: {}, skills: "", names: "" };
@@ -1246,7 +1283,7 @@
     let curNames = window.freshmanDataCache.names.split(',').map(n => n.trim()).filter(n => n);
     if(!curNames.includes(name)) {
       curNames.push(name);
-      set(ref(db, 'freshman_config/names'), curNames.join(', '));
+      set(ref(ref(db, 'freshman_config/names'), curNames.join(', ')));
     }
 
     if(rawSkills) {
@@ -1355,7 +1392,7 @@
             });
 
             html += `
-            <td><input type="text" id="cell_check_${name}" class="table-input" style="padding:4px; font-size:20px; text-align:center;" value="${obj.checker}" placeholder="填寫考核人"></td>
+            <td><input type="text" id="cell_check_${name}" class="table-input" style="padding:4px; font-size:20px; text-align:center;" value="${obj.checker || ''}" placeholder="填寫考核人"></td>
             <td style="text-align:center;">
               <button class="btn-action btn-action-sm" style="background:#86efac; margin:0; padding:6px 12px !important;" onclick="saveFreshmanRowInline('${name}')" title="聯動更新雲端">💾</button>
             </td>
@@ -1396,6 +1433,220 @@
       alert(`🎉 [${name}] 的進場日期、廠區與全技能格子皆已同步成功！`);
     }).catch(err => alert("同步失敗: " + err));
   };
+
+
+  // =========================================================================
+  // 📋 教育訓練紀錄區 核心邏輯 (V54 精密開發)
+  // =========================================================================
+
+  function initTrainingPageData() {
+    const today = new Date().toISOString().split('T')[0];
+    const dateEl = document.getElementById('eduDate');
+    if(dateEl) dateEl.value = today;
+
+    onValue(ref(db, 'training_records'), (snapshot) => {
+      const rawData = snapshot.val() || {};
+      let courses = new Set();
+      let dates = new Set();
+      let workers = new Set();
+      let teachers = new Set();
+
+      for(let k in rawData) {
+        const item = rawData[k];
+        if(item.course) courses.add(item.course);
+        if(item.date) dates.add(item.date);
+        if(item.teacher) teachers.add(item.teacher);
+        if(item.workers) {
+          item.workers.split(',').forEach(w => { if(w.trim()) workers.add(w.trim()); });
+        }
+      }
+
+      const fEduCourse = document.getElementById('fEduCourse');
+      const fEduDate = document.getElementById('fEduDate');
+      const fEduWorker = document.getElementById('fEduWorker');
+      const fEduTeacher = document.getElementById('fEduTeacher');
+
+      if(fEduCourse) {
+        const saved = fEduCourse.value;
+        fEduCourse.innerHTML = '<option value="">所有課程</option>' + Array.from(courses).map(c => `<option value="${c}">${c}</option>`).join('');
+        fEduCourse.value = saved;
+      }
+      if(fEduDate) {
+        const saved = fEduDate.value;
+        fEduDate.innerHTML = '<option value="">所有日期</option>' + Array.from(dates).map(d => `<option value="${d}">${d}</option>`).join('');
+        fEduDate.value = saved;
+      }
+      if(fEduWorker) {
+        const saved = fEduWorker.value;
+        fEduWorker.innerHTML = '<option value="">所有訓練人員</option>' + Array.from(workers).map(w => `<option value="${w}">${w}</option>`).join('');
+        fEduWorker.value = saved;
+      }
+      if(fEduTeacher) {
+        const saved = fEduTeacher.value;
+        fEduTeacher.innerHTML = '<option value="">所有講師</option>' + Array.from(teachers).map(t => `<option value="${t}">${t}</option>`).join('');
+        fEduTeacher.value = saved;
+      }
+
+      renderTrainingList();
+    });
+  }
+
+  window.clearTrainingFilters = () => {
+    document.getElementById('fEduCourse').value = '';
+    document.getElementById('fEduDate').value = '';
+    document.getElementById('fEduWorker').value = '';
+    document.getElementById('fEduTeacher').value = '';
+    renderTrainingList();
+  };
+
+  window.saveTrainingRecord = () => {
+    const password = prompt("🚨 變更教育訓練紀錄，請輸入驗證密碼:");
+    if (password !== "0000") { alert("密碼錯誤，拒絕儲存！"); return; }
+
+    const course = document.getElementById('eduCourse').value.trim();
+    const date = document.getElementById('eduDate').value;
+    const teacher = document.getElementById('eduTeacher').value.trim();
+    const workers = document.getElementById('eduWorkers').value.trim();
+    const photoFile = document.getElementById('eduPhotoFile').files[0];
+
+    if(!course || !date || !teacher || !workers) {
+      alert("⚠️ 請完整填寫：課程名稱、訓練日期、訓練講師與訓練人員名單！");
+      return;
+    }
+
+    const key = window.currentEditEduKey || Date.now();
+    const existingPhoto = window.currentEditEduPhotoBase64 || "";
+
+    const doSaveEdu = (compressedB64) => {
+      set(ref(db, `training_records/${key}`), {
+        key: parseInt(key), course, date, teacher, workers, photo: compressedB64 || existingPhoto || ""
+      }).then(() => {
+        alert("🎉 教育訓練紀錄成功同步發送至雲端！");
+        window.currentEditEduKey = null; window.currentEditEduPhotoBase64 = null;
+        document.getElementById('eduCourse').value = '';
+        document.getElementById('eduTeacher').value = '';
+        document.getElementById('eduWorkers').value = '';
+        document.getElementById('eduPhotoFile').value = '';
+        renderTrainingList();
+      }).catch(err => alert("同步雲端失敗: " + err));
+    };
+
+    if(photoFile) { compressImg(photoFile, (b64) => { doSaveEdu(b64); }); } else { doSaveEdu(null); }
+  };
+
+  window.renderTrainingList = () => {
+    const listArea = document.getElementById('trainingListArea');
+    if(!listArea) return;
+
+    const fCourse = document.getElementById('fEduCourse').value;
+    const fDate = document.getElementById('fEduDate').value;
+    const fWorker = document.getElementById('fEduWorker').value;
+    const fTeacher = document.getElementById('fEduTeacher').value;
+
+    onValue(ref(db, 'training_records'), (snapshot) => {
+      const rawData = snapshot.val() || {};
+      let dataArray = [];
+      for(let k in rawData) { dataArray.push(rawData[k]); }
+      dataArray.sort((a, b) => b.key - a.key);
+
+      let filtered = dataArray.filter(item => {
+        if(fCourse && item.course !== fCourse) return false;
+        if(fDate && item.date !== fDate) return false;
+        if(fTeacher && item.teacher !== fTeacher) return false;
+        if(fWorker) {
+          const arr = (item.workers || "").split(',').map(w => w.trim());
+          if(!arr.includes(fWorker)) return false;
+        }
+        return true;
+      });
+
+      let html = `<table class="skill-table">
+        <tr>
+          <th style="width: 20%; text-align:left;">課程名稱</th>
+          <th style="width: 13%; text-align:center;">訓練日期</th>
+          <th style="width: 13%; text-align:center;">訓練講師</th>
+          <th style="text-align:left;">訓練人員</th>
+          <th style="width: 8%; text-align:center;">訓練照片</th>
+          <th style="width: 12%; text-align:center;">操作功能</th>
+        </tr>`;
+
+      if(filtered.length === 0) {
+        html += `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">目前尚無符合篩選條件的訓練紀錄。</td></tr>`;
+      } else {
+        filtered.forEach(item => {
+          const k = item.key;
+          const photoBtnClass = item.photo ? "btn-action btn-has-photo" : "btn-action";
+
+          html += `<tr style="background:#ffffff;">
+            <td><input type="text" id="edu_inline_course_${k}" class="table-input" value="${item.course || ''}"></td>
+            <td><input type="date" id="edu_inline_date_${k}" class="table-input" style="text-align:center;" value="${item.date || ''}"></td>
+            <td><input type="text" id="edu_inline_teacher_${k}" class="table-input" style="text-align:center;" value="${item.teacher || ''}"></td>
+            <td><input type="text" id="edu_inline_workers_${k}" class="table-input" value="${item.workers || ''}"></td>
+            <td style="text-align:center;">
+              ${item.photo ? `<button class="${photoBtnClass}" style="padding:6px 12px; font-size:20px;" onclick="viewImg('${item.photo}')">📷</button>` : '<span style="font-size:18px;color:#94a3b8;">無</span>'}
+              <input type="file" id="edu_inline_file_${k}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
+            </td>
+            <td style="text-align:center;">
+              <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:3px auto;" onclick="saveInlineTraining('${k}', '${item.photo || ''}')" title="格子直改儲存">💾 儲存</button>
+              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:3px auto;" onclick="loadToTopTrainingEditor('${k}', \`${item.course}\`, '${item.date}', \`${item.teacher}\`, \`${item.workers}\`, '${item.photo || ''}')" title="回填上方控制台">✏️ 修改</button>
+              <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:3px auto;" onclick="deleteTrainingRecord('${k}')" title="永久刪除">🗑️</button>
+            </td>
+          </tr>`;
+        });
+      }
+
+      html += `</table>`;
+      listArea.innerHTML = html;
+    });
+  };
+
+  window.saveInlineTraining = (key, existingPhoto) => {
+    const password = prompt("🚨 確定要直改此列訓練數據並儲存嗎？請輸入驗證密碼:");
+    if (password !== "0000") { alert("密碼錯誤，變更無效！"); return; }
+
+    const uCourse = document.getElementById(`edu_inline_course_${key}`).value.trim();
+    const uDate = document.getElementById(`edu_inline_date_${key}`).value;
+    const uTeacher = document.getElementById(`edu_inline_teacher_${key}`).value.trim();
+    const uWorkers = document.getElementById(`edu_inline_workers_${key}`).value.trim();
+    const fileEl = document.getElementById(`edu_inline_file_${key}`).files[0];
+
+    if(!uCourse || !uDate || !uTeacher || !uWorkers) { alert("各欄位內容不允許留空！"); return; }
+
+    const performEduUpdate = (b64) => {
+      set(ref(db, `training_records/${key}`), {
+        key: parseInt(key), course: uCourse, date: uDate, teacher: uTeacher, workers: uWorkers, photo: b64 || existingPhoto || ""
+      }).then(() => {
+        alert("🎉 教育訓練格子直改成功！雲端數據已更新同步！");
+        renderTrainingList();
+      }).catch(err => alert("更新失敗: " + err));
+    };
+
+    if(fileEl) { compressImg(fileEl, (compressed) => { performEduUpdate(compressed); }); } else { performEduUpdate(null); }
+  };
+
+  window.loadToTopTrainingEditor = (key, course, date, teacher, workers, photo) => {
+    const password = prompt("🚨 回填最上方編輯區，請輸入密碼:");
+    if (password !== "0000") { alert("密碼錯誤！"); return; }
+
+    window.currentEditEduKey = key;
+    window.currentEditEduPhotoBase64 = photo;
+
+    document.getElementById('eduCourse').value = course;
+    document.getElementById('eduDate').value = date;
+    document.getElementById('eduTeacher').value = teacher;
+    document.getElementById('eduWorkers').value = workers;
+
+    alert("📍 資料已成功載入至最上方控制台！");
+  };
+
+  window.deleteTrainingRecord = (key) => {
+    const password = prompt("🚨 警告：此項目將從資料庫中永久抹除，請輸入確認密碼:");
+    if (password !== "0000") { alert("密碼錯誤，程序終止！"); return; }
+    if(confirm("確定要永久刪除此筆教育訓練紀錄嗎？")) {
+      remove(ref(db, `training_records/${key}`)).then(() => { alert("資料已成功自雲端刪除！"); renderTrainingList(); });
+    }
+  };
+
 
   showPage('home');
 </script>
