@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V54</title>
+  <title>員工評核系統 - V56</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 26px; font-weight: bold; }
     nav { width: 280px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; z-index: 100; }
@@ -43,10 +43,10 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260712-54</div>
+  <div class="version">版本: 20260712-56</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
-  <div onclick="showPage('skills')">📊 技能總表(⭐導師)</div>
+  <div onclick="showPage('skills')">📊 技能總表(⭐導師✓熟手◭半熟手)</div>
   <div onclick="showPage('freshman')">📊 新人通識紀錄區</div>
   <div onclick="showPage('training')">📋 教育訓練紀錄區</div>
   <div onclick="showPage('6s')">✅ 6S Check</div>
@@ -107,13 +107,13 @@
     return "circle-progress p-0";
   };
 
-  let globalSymbols = { normal: "✓", master: "⭐", half: "◒" };
+  let globalSymbols = { normal: "✓", master: "⭐", half: "◭" };
   onValue(ref(db, 'settings/symbols'), (s) => {
     if (s.val()) { 
       globalSymbols = {
         normal: s.val().normal || "✓",
         master: s.val().master || "⭐",
-        half: s.val().half || "◒"
+        half: s.val().half || "◭"
       }; 
     }
   });
@@ -251,7 +251,7 @@
       initFreshmanPageData();
     } else if (page === 'training') {
       // ==========================================
-      // 📋 教育訓練紀錄區 獨立頁面設計
+      // 📋 教育訓練紀錄區 獨立頁面設計 (V56)
       // ==========================================
       content.innerHTML = `
         <h1>📋 教育訓練紀錄區</h1>
@@ -259,13 +259,14 @@
         <div class="card" style="border-color: #a855f7;">
           <h3>➕ 建立 / 編輯教育訓練紀錄 (最上方填寫區)</h3>
           <div style="display: flex; gap: 15px; margin-bottom: 12px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 150px;">廠區：<select id="eduFactory"><option value="">請選擇廠區</option><option value="頂埔廠">頂埔廠</option><option value="民生廠">民生廠</option><option value="海外廠">海外廠</option></select></div>
             <div style="flex: 2; min-width: 250px;">課程名稱：<input type="text" id="eduCourse" placeholder="請輸入課程名稱"></div>
             <div style="flex: 1; min-width: 200px;">訓練日期：<input type="date" id="eduDate"></div>
             <div style="flex: 1; min-width: 200px;">訓練講師：<input type="text" id="eduTeacher" placeholder="講師姓名"></div>
           </div>
           <div style="margin-bottom: 12px;">
-            訓練人員 (多人請使用英文逗號 "," 隔開)：
-            <input type="text" id="eduWorkers" placeholder="例如: 張三, 李四, 王五">
+            訓練人員 (多人請使用英文逗號 "," 隔開，儲存後自動拆分)：
+            <input type="text" id="eduWorkers" placeholder="例如: 11, 22">
           </div>
           <div style="margin: 15px 0; font-size: 24px;">訓練照片上傳：<input type="file" id="eduPhotoFile" accept="image/*"></div>
           <button class="btn" style="background: #a855f7;" onclick="saveTrainingRecord()">💾 儲存訓練資料至雲端</button>
@@ -273,12 +274,14 @@
 
         <div class="card" style="border-color: #64748b; background: #f8fafc;">
           <h3>📋 人員資料暫存區 (方便輸入時複製使用)</h3>
-          <textarea id="eduScratchpad" rows="3" placeholder="可在這裡臨時貼上或編輯人員名單，以便複製到上方訓練人員欄位內..." style="font-size:22px; color:#475569; font-weight:normal;"></textarea>
+          <textarea id="eduScratchpad" rows="3" placeholder="可在這裡臨時貼上或編輯人員名單，以便複製到上方訓練人員欄位內..." style="font-size:22px; color:#475569; font-weight:normal; margin-bottom: 10px;"></textarea>
+          <button class="btn" style="background: #475569;" onclick="saveEduScratchpad()">💾 儲存名單</button>
         </div>
 
         <div class="card" style="background: #f1f5f9; border-color: #000;">
           <h3>🔍 教育訓練紀錄複合篩選</h3>
           <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+            <select id="fEduFactory" style="width: auto; min-width: 150px;" onchange="renderTrainingList()"><option value="">所有廠區</option><option value="頂埔廠">頂埔廠</option><option value="民生廠">民生廠</option><option value="海外廠">海外廠</option></select>
             <select id="fEduCourse" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有課程</option></select>
             <select id="fEduDate" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有日期</option></select>
             <select id="fEduWorker" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有訓練人員</option></select>
@@ -317,7 +320,7 @@
       content.innerHTML = `<h1>💡 技能評核進度表</h1><select id="evalLeaderFilter" onchange="renderEval()"><option value="">請選擇組長</option></select><div id="evalArea"></div>`;
       setupEvalFilter();
     } else {
-      content.innerHTML = `<div class="gradient-bg"><h1>📊 技能總表(⭐導師)</h1><select id="leaderFilter" onchange="renderSkills()"><option value="">請選擇組長</option></select><div id="skillTable"></div></div>`;
+      content.innerHTML = `<div class="gradient-bg"><h1>📊 技能總表(⭐導師✓熟手◭半熟手)</h1><select id="leaderFilter" onchange="renderSkills()"><option value="">請選擇組長</option></select><div id="skillTable"></div></div>`;
       setupLeaderFilter();
     }
   };
@@ -548,7 +551,7 @@
   
   window.saveSymbols = () => {
     const normal = document.getElementById('symNormal').value || "✓";
-    const half = document.getElementById('symHalf').value || "◒";
+    const half = document.getElementById('symHalf').value || "◭";
     const master = document.getElementById('symMaster').value || "⭐";
     set(ref(db, 'settings/symbols'), { normal, half, master }).then(() => { alert('🎉 技能總表顯示符號修改成功！已即時發送至雲端。'); });
   };
@@ -572,6 +575,7 @@
   }
   
   function setupLeaderFilter() { onValue(ref(db, 'teams'), (s) => { const lf = document.getElementById('leaderFilter'); if(lf) lf.innerHTML = '<option value="">請選擇組長</option>' + Object.keys(s.val()||{}).map(l => `<option value="${l}">${l}</option>`).join(''); }); }
+  
   window.renderSkills = () => {
     const leader = document.getElementById('leaderFilter').value;
     if(!leader) return;
@@ -598,7 +602,7 @@
             let displaySymbol = globalSymbols.normal;
             let displayColor = "#22c55e"; 
             if(hasMaster) { displaySymbol = globalSymbols.master; displayColor = "#a855f7"; }
-            if(hasHalf) { displaySymbol = globalSymbols.half; displayColor = "#f59e0b"; }
+            if(hasHalf) { displaySymbol = globalSymbols.half; displayColor = "#ef4444"; } 
             
             return `<td style="text-align:center; color:${displayColor}; font-size:26px;">${displaySymbol}</td>`; 
           } 
@@ -1436,10 +1440,16 @@
 
 
   // =========================================================================
-  // 📋 教育訓練紀錄區 核心邏輯 (V54 精密開發)
+  // 📋 教育訓練紀錄區 核心邏輯 (V56 精密升級開發)
   // =========================================================================
 
   function initTrainingPageData() {
+    // 載入教育訓練人員名單暫存區
+    onValue(ref(db, 'settings/eduScratchpad'), (s) => {
+      const pad = document.getElementById('eduScratchpad');
+      if (pad) { pad.value = s.val() || ""; }
+    }, { onlyOnce: true });
+
     const today = new Date().toISOString().split('T')[0];
     const dateEl = document.getElementById('eduDate');
     if(dateEl) dateEl.value = today;
@@ -1491,7 +1501,15 @@
     });
   }
 
+  window.saveEduScratchpad = () => {
+    const val = document.getElementById('eduScratchpad').value;
+    set(ref(db, 'settings/eduScratchpad'), val).then(() => {
+      alert('🎉 暫存名單已永久儲存至雲端！');
+    });
+  };
+
   window.clearTrainingFilters = () => {
+    document.getElementById('fEduFactory').value = '';
     document.getElementById('fEduCourse').value = '';
     document.getElementById('fEduDate').value = '';
     document.getElementById('fEduWorker').value = '';
@@ -1500,44 +1518,63 @@
   };
 
   window.saveTrainingRecord = () => {
-    const password = prompt("🚨 變更教育訓練紀錄，請輸入驗證密碼:");
-    if (password !== "0000") { alert("密碼錯誤，拒絕儲存！"); return; }
-
+    const factory = document.getElementById('eduFactory').value;
     const course = document.getElementById('eduCourse').value.trim();
     const date = document.getElementById('eduDate').value;
     const teacher = document.getElementById('eduTeacher').value.trim();
-    const workers = document.getElementById('eduWorkers').value.trim();
+    const workersRaw = document.getElementById('eduWorkers').value.trim();
     const photoFile = document.getElementById('eduPhotoFile').files[0];
 
-    if(!course || !date || !teacher || !workers) {
-      alert("⚠️ 請完整填寫：課程名稱、訓練日期、訓練講師與訓練人員名單！");
+    if(!factory || !course || !date || !teacher || !workersRaw) {
+      alert("⚠️ 請完整填寫：廠區、課程名稱、訓練日期、訓練講師與訓練人員名單！");
       return;
     }
 
-    const key = window.currentEditEduKey || Date.now();
+    const workersArray = workersRaw.split(',').map(w => w.trim()).filter(Boolean);
     const existingPhoto = window.currentEditEduPhotoBase64 || "";
 
     const doSaveEdu = (compressedB64) => {
-      set(ref(db, `training_records/${key}`), {
-        key: parseInt(key), course, date, teacher, workers, photo: compressedB64 || existingPhoto || ""
-      }).then(() => {
-        alert("🎉 教育訓練紀錄成功同步發送至雲端！");
-        window.currentEditEduKey = null; window.currentEditEduPhotoBase64 = null;
-        document.getElementById('eduCourse').value = '';
-        document.getElementById('eduTeacher').value = '';
-        document.getElementById('eduWorkers').value = '';
-        document.getElementById('eduPhotoFile').value = '';
-        renderTrainingList();
-      }).catch(err => alert("同步雲端失敗: " + err));
+      if (window.currentEditEduKey) {
+        // 單筆資料修改
+        const key = window.currentEditEduKey;
+        set(ref(db, `training_records/${key}`), {
+          key: parseInt(key), factory, course, date, teacher, workers: workersRaw, photo: compressedB64 || existingPhoto || ""
+        }).then(() => {
+          alert("🎉 教育訓練紀錄修改成功並同步發送至雲端！");
+          clearTrainingInputs();
+        }).catch(err => alert("同步雲端失敗: " + err));
+      } else {
+        // 多人名單建立與批次拆分獨立儲存
+        let promises = workersArray.map((worker, index) => {
+          const key = Date.now() + index;
+          return set(ref(db, `training_records/${key}`), {
+            key: key, factory, course, date, teacher, workers: worker, photo: compressedB64 || ""
+          });
+        });
+        Promise.all(promises).then(() => {
+          alert(`🎉 成功建立並拆分為 ${workersArray.length} 筆獨立教育訓練紀錄！`);
+          clearTrainingInputs();
+        }).catch(err => alert("同步雲端失敗: " + err));
+      }
     };
 
     if(photoFile) { compressImg(photoFile, (b64) => { doSaveEdu(b64); }); } else { doSaveEdu(null); }
   };
 
+  function clearTrainingInputs() {
+    window.currentEditEduKey = null; window.currentEditEduPhotoBase64 = null;
+    document.getElementById('eduCourse').value = '';
+    document.getElementById('eduTeacher').value = '';
+    document.getElementById('eduWorkers').value = '';
+    document.getElementById('eduPhotoFile').value = '';
+    renderTrainingList();
+  }
+
   window.renderTrainingList = () => {
     const listArea = document.getElementById('trainingListArea');
     if(!listArea) return;
 
+    const fFactory = document.getElementById('fEduFactory').value;
     const fCourse = document.getElementById('fEduCourse').value;
     const fDate = document.getElementById('fEduDate').value;
     const fWorker = document.getElementById('fEduWorker').value;
@@ -1550,6 +1587,7 @@
       dataArray.sort((a, b) => b.key - a.key);
 
       let filtered = dataArray.filter(item => {
+        if(fFactory && item.factory !== fFactory) return false;
         if(fCourse && item.course !== fCourse) return false;
         if(fDate && item.date !== fDate) return false;
         if(fTeacher && item.teacher !== fTeacher) return false;
@@ -1562,33 +1600,39 @@
 
       let html = `<table class="skill-table">
         <tr>
+          <th style="width: 12%; text-align:center;">廠區</th>
+          <th style="text-align:left;">訓練人員</th>
           <th style="width: 20%; text-align:left;">課程名稱</th>
           <th style="width: 13%; text-align:center;">訓練日期</th>
           <th style="width: 13%; text-align:center;">訓練講師</th>
-          <th style="text-align:left;">訓練人員</th>
-          <th style="width: 8%; text-align:center;">訓練照片</th>
+          <th style="width: 8%; text-align:center;">照片</th>
           <th style="width: 12%; text-align:center;">操作功能</th>
         </tr>`;
 
       if(filtered.length === 0) {
-        html += `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">目前尚無符合篩選條件的訓練紀錄。</td></tr>`;
+        html += `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">目前尚無符合篩選條件的訓練紀錄。</td></tr>`;
       } else {
         filtered.forEach(item => {
           const k = item.key;
           const photoBtnClass = item.photo ? "btn-action btn-has-photo" : "btn-action";
+          
+          let fOptions = ['頂埔廠', '民生廠', '海外廠'];
+          if(item.factory && !fOptions.includes(item.factory)) fOptions.push(item.factory);
+          let selectHtml = `<select id="edu_inline_factory_${k}" class="table-input" style="padding:2px; text-align:center;">` + fOptions.map(f => `<option value="${f}" ${item.factory===f?'selected':''}>${f}</option>`).join('') + `</select>`;
 
           html += `<tr style="background:#ffffff;">
+            <td>${selectHtml}</td>
+            <td><input type="text" id="edu_inline_workers_${k}" class="table-input" value="${item.workers || ''}"></td>
             <td><input type="text" id="edu_inline_course_${k}" class="table-input" value="${item.course || ''}"></td>
             <td><input type="date" id="edu_inline_date_${k}" class="table-input" style="text-align:center;" value="${item.date || ''}"></td>
             <td><input type="text" id="edu_inline_teacher_${k}" class="table-input" style="text-align:center;" value="${item.teacher || ''}"></td>
-            <td><input type="text" id="edu_inline_workers_${k}" class="table-input" value="${item.workers || ''}"></td>
             <td style="text-align:center;">
               ${item.photo ? `<button class="${photoBtnClass}" style="padding:6px 12px; font-size:20px;" onclick="viewImg('${item.photo}')">📷</button>` : '<span style="font-size:18px;color:#94a3b8;">無</span>'}
               <input type="file" id="edu_inline_file_${k}" accept="image/*" style="font-size:11px; width:100%; margin-top:5px; padding:0; border:none; background:transparent;">
             </td>
             <td style="text-align:center;">
               <button class="btn-action btn-action-sm" style="background:#86efac; display:block; width:95%; margin:3px auto;" onclick="saveInlineTraining('${k}', '${item.photo || ''}')" title="格子直改儲存">💾 儲存</button>
-              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:3px auto;" onclick="loadToTopTrainingEditor('${k}', \`${item.course}\`, '${item.date}', \`${item.teacher}\`, \`${item.workers}\`, '${item.photo || ''}')" title="回填上方控制台">✏️ 修改</button>
+              <button class="btn-action btn-action-sm" style="background:#fde047; display:block; width:95%; margin:3px auto;" onclick="loadToTopTrainingEditor('${k}', '${item.factory || ''}', \`${item.course}\`, '${item.date}', \`${item.teacher}\`, \`${item.workers}\`, '${item.photo || ''}')" title="回填上方控制台">✏️ 修改</button>
               <button class="btn-action btn-action-sm" style="background:#fca5a5; display:block; width:95%; margin:3px auto;" onclick="deleteTrainingRecord('${k}')" title="永久刪除">🗑️</button>
             </td>
           </tr>`;
@@ -1601,20 +1645,18 @@
   };
 
   window.saveInlineTraining = (key, existingPhoto) => {
-    const password = prompt("🚨 確定要直改此列訓練數據並儲存嗎？請輸入驗證密碼:");
-    if (password !== "0000") { alert("密碼錯誤，變更無效！"); return; }
-
+    const uFactory = document.getElementById(`edu_inline_factory_${key}`).value;
     const uCourse = document.getElementById(`edu_inline_course_${key}`).value.trim();
     const uDate = document.getElementById(`edu_inline_date_${key}`).value;
     const uTeacher = document.getElementById(`edu_inline_teacher_${key}`).value.trim();
     const uWorkers = document.getElementById(`edu_inline_workers_${key}`).value.trim();
     const fileEl = document.getElementById(`edu_inline_file_${key}`).files[0];
 
-    if(!uCourse || !uDate || !uTeacher || !uWorkers) { alert("各欄位內容不允許留空！"); return; }
+    if(!uFactory || !uCourse || !uDate || !uTeacher || !uWorkers) { alert("各欄位內容不允許留空！"); return; }
 
     const performEduUpdate = (b64) => {
       set(ref(db, `training_records/${key}`), {
-        key: parseInt(key), course: uCourse, date: uDate, teacher: uTeacher, workers: uWorkers, photo: b64 || existingPhoto || ""
+        key: parseInt(key), factory: uFactory, course: uCourse, date: uDate, teacher: uTeacher, workers: uWorkers, photo: b64 || existingPhoto || ""
       }).then(() => {
         alert("🎉 教育訓練格子直改成功！雲端數據已更新同步！");
         renderTrainingList();
@@ -1624,13 +1666,11 @@
     if(fileEl) { compressImg(fileEl, (compressed) => { performEduUpdate(compressed); }); } else { performEduUpdate(null); }
   };
 
-  window.loadToTopTrainingEditor = (key, course, date, teacher, workers, photo) => {
-    const password = prompt("🚨 回填最上方編輯區，請輸入密碼:");
-    if (password !== "0000") { alert("密碼錯誤！"); return; }
-
+  window.loadToTopTrainingEditor = (key, factory, course, date, teacher, workers, photo) => {
     window.currentEditEduKey = key;
     window.currentEditEduPhotoBase64 = photo;
 
+    document.getElementById('eduFactory').value = factory || "";
     document.getElementById('eduCourse').value = course;
     document.getElementById('eduDate').value = date;
     document.getElementById('eduTeacher').value = teacher;
@@ -1640,8 +1680,6 @@
   };
 
   window.deleteTrainingRecord = (key) => {
-    const password = prompt("🚨 警告：此項目將從資料庫中永久抹除，請輸入確認密碼:");
-    if (password !== "0000") { alert("密碼錯誤，程序終止！"); return; }
     if(confirm("確定要永久刪除此筆教育訓練紀錄嗎？")) {
       remove(ref(db, `training_records/${key}`)).then(() => { alert("資料已成功自雲端刪除！"); renderTrainingList(); });
     }
