@@ -1616,7 +1616,7 @@
           const k = item.key;
           const photoBtnClass = item.photo ? "btn-action btn-has-photo" : "btn-action";
           
-          let fOptions = ['頂埔廠', '民生廠', '海外廠'];
+          let fOptions = ['竹東廠', '模冠', '御弘', '宏田'];
           if(item.factory && !fOptions.includes(item.factory)) fOptions.push(item.factory);
           let selectHtml = `<select id="edu_inline_factory_${k}" class="table-input" style="padding:2px; text-align:center;">` + fOptions.map(f => `<option value="${f}" ${item.factory===f?'selected':''}>${f}</option>`).join('') + `</select>`;
 
