@@ -1684,8 +1684,14 @@ html_code = """<!DOCTYPE html>
     }
   };
 
-// 匯出 XLSX 核心邏輯 (垂直排列版)
+// 匯出 XLSX 核心邏輯
   window.downloadTrainingXLSX = () => {
+    // 檢查工具庫是否成功載入
+    if (typeof XLSX === 'undefined') {
+        alert('錯誤：Excel 工具庫 (XLSX) 未載入，請確認 <head> 內是否有 <script src="...">');
+        return;
+    }
+
     const fFactory = document.getElementById('fEduFactory').value;
     const fCourse = document.getElementById('fEduCourse').value;
     const fDate = document.getElementById('fEduDate').value;
@@ -1695,10 +1701,8 @@ html_code = """<!DOCTYPE html>
     onValue(ref(db, 'training_records'), (snapshot) => {
         const rawData = snapshot.val() || {};
         let dataArray = Object.values(rawData);
-        
         if(dataArray.length === 0) { alert('無資料可匯出！'); return; }
 
-        // 篩選邏輯
         let filteredData = dataArray.filter(item => {
             if(fFactory && item.factory !== fFactory) return false;
             if(fCourse && item.course !== fCourse) return false;
@@ -1716,34 +1720,26 @@ html_code = """<!DOCTYPE html>
         const wb = XLSX.utils.book_new();
         const groups = {};
 
-        // 分組邏輯
         filteredData.forEach(item => {
             const factory = item.factory || "未分類";
             if (!groups[factory]) groups[factory] = [];
-            
-            // 轉換為垂直排列的格式 (每一筆資料有 5 行 + 1 行空白)
             groups[factory].push([
                 ["廠區", item.factory || ""],
                 ["訓練人員", item.workers || ""],
                 ["課程名稱", item.course || ""],
                 ["訓練日期", item.date || ""],
                 ["訓練講師", item.teacher || ""],
-                ["", ""] // 空白行分隔
+                ["", ""]
             ]);
         });
 
-        // 建立工作表
         for (const [factoryName, records] of Object.entries(groups)) {
             let aoa = [];
-            records.forEach(rec => {
-                aoa.push(...rec);
-            });
-            
+            records.forEach(rec => aoa.push(...rec));
             const ws = XLSX.utils.aoa_to_sheet(aoa);
             XLSX.utils.book_append_sheet(wb, ws, factoryName.substring(0, 31));
         }
 
-        // 產生檔案
         XLSX.writeFile(wb, `教育訓練報表_${new Date().toISOString().slice(0,10)}.xlsx`);
     }, { onlyOnce: true });
   };
