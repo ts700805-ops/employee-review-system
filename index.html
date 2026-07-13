@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V58</title>
+  <title>員工評核系統 - V59</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 26px; font-weight: bold; }
     nav { width: 280px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; z-index: 100; }
@@ -43,7 +43,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260712-58</div>
+  <div class="version">版本: 20260712-59</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('skills')">📊 技能總表(⭐導師✓熟手◭半熟手)</div>
@@ -252,7 +252,7 @@
       initFreshmanPageData();
     } else if (page === 'training') {
       // ==========================================
-      // 📋 教育訓練紀錄區 V58
+      // 📋 教育訓練紀錄區 V59 (新增 CSV 匯出功能)
       // ==========================================
       content.innerHTML = `
         <h1>📋 教育訓練紀錄區</h1>
@@ -288,7 +288,7 @@
         </div>
 
         <div class="card" style="background: #f1f5f9; border-color: #000;">
-          <h3>🔍 教育訓練紀錄複合篩選</h3>
+          <h3>🔍 教育訓練紀錄複合篩選與匯出</h3>
           <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
             <select id="fEduFactory" style="width: auto; min-width: 150px;" onchange="renderTrainingList()"><option value="">所有廠區</option></select>
             <select id="fEduCourse" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有課程</option></select>
@@ -296,6 +296,7 @@
             <select id="fEduWorker" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有訓練人員</option></select>
             <select id="fEduTeacher" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有講師</option></select>
             <button class="btn" style="background: #64748b; padding: 10px 16px; font-size: 20px;" onclick="clearTrainingFilters()">重置篩選</button>
+            <button class="btn" style="background: #10b981; padding: 10px 20px; margin-left: auto;" onclick="downloadTrainingCSV()">📊 匯出篩選資料 CSV</button>
           </div>
         </div>
 
@@ -315,7 +316,7 @@
           </div>
           <button class="btn" style="background:#f59e0b; margin-top:10px;" onclick="saveSymbols()">儲存符號設定</button>
         </div>
-        <div class="card"><h3>👥 員工配置</h3><input type="text" id="ln" placeholder="組長名稱"><input type="text" id="ml" placeholder="組員名稱(逗號分隔)"><button class="btn" onclick="addTeam()">儲存新組別</button><hr><div id="teamList"></div></div>
+        <div class="card"><h3>👥 員工配置</h3><input type="text" id="ln" placeholder="組長名稱"><input type="text" id="ml" placeholder="組員名稱(逗分隔)"><button class="btn" onclick="addTeam()">儲存新組別</button><hr><div id="teamList"></div></div>
         <div class="card"><h3>🛠️ 技能設定</h3><select id="sLeaderSelect" onchange="updateMemberSelect()"><option value="">選擇組長</option></select><select id="sMemberSelect"><option value="">請先選擇組長</option></select>
         <div style="margin: 10px 0; font-size:22px;">
           技能類型：
@@ -490,10 +491,12 @@
       for(let key in rawData) { dataArray.push(rawData[key]); }
       dataArray.sort((a, b) => getSortWeight(a.cat) - getSortWeight(b.cat));
       
-      let csvContent = "\uFEFF" + "課別,分類,確認項目,評分,現況說明,改善方式\n";
+      let csvContent = "﻿" + "課別,分類,確認項目,評分,現況說明,改善方式
+";
       dataArray.forEach((rowObj) => {
         let row = [unit, rowObj.cat || '', rowObj.item || '', rowObj.score || '0', rowObj.note || '', rowObj.improve || ''].map(text => `"${String(text).replace(/"/g, '""')}"`).join(",");
-        csvContent += row + "\n";
+        csvContent += row + "
+";
       });
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
@@ -826,12 +829,14 @@
 
       if(filteredData.length === 0) { alert('目前無符合篩選條件的績效資料可供匯出！'); return; }
 
-      let csvContent = "\uFEFF" + "記錄日期,組長,人員姓名,績效分數,內容說明敘述,記錄人員\n";
+      let csvContent = "﻿" + "記錄日期,組長,人員姓名,績效分數,內容說明敘述,記錄人員
+";
       filteredData.forEach((rowObj) => {
         let row = [
           rowObj.date || '', rowObj.leader || '', rowObj.name || '', rowObj.score || '0', rowObj.contentDesc || '', rowObj.recorder || ''
         ].map(text => `"${String(text).replace(/"/g, '""')}"`).join(",");
-        csvContent += row + "\n";
+        csvContent += row + "
+";
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1408,7 +1413,7 @@
 
 
   // =========================================================================
-  // 📋 教育訓練紀錄區 核心邏輯 (V58 精密升級開發 - 簡化廠區管理)
+  // 📋 教育訓練紀錄區 核心邏輯 (V59 精密升級開發 - CSV匯出)
   // =========================================================================
 
   window.saveEduFactoryList = () => {
@@ -1680,6 +1685,60 @@
     if(confirm("確定要永久刪除此筆教育訓練紀錄嗎？")) {
       remove(ref(db, `training_records/${key}`)).then(() => { alert("資料已成功自雲端刪除！"); renderTrainingList(); });
     }
+  };
+
+  // 匯出 CSV 檔案邏輯
+  window.downloadTrainingCSV = () => {
+    const fFactory = document.getElementById('fEduFactory').value;
+    const fCourse = document.getElementById('fEduCourse').value;
+    const fDate = document.getElementById('fEduDate').value;
+    const fWorker = document.getElementById('fEduWorker').value;
+    const fTeacher = document.getElementById('fEduTeacher').value;
+
+    onValue(ref(db, 'training_records'), (snapshot) => {
+      const rawData = snapshot.val() || {};
+      let dataArray = [];
+      for(let k in rawData) { dataArray.push(rawData[k]); }
+      dataArray.sort((a, b) => b.key - a.key);
+
+      let filteredData = dataArray.filter(item => {
+        if(fFactory && item.factory !== fFactory) return false;
+        if(fCourse && item.course !== fCourse) return false;
+        if(fDate && item.date !== fDate) return false;
+        if(fTeacher && item.teacher !== fTeacher) return false;
+        if(fWorker) {
+          const arr = (item.workers || "").split(',').map(w => w.trim());
+          if(!arr.includes(fWorker)) return false;
+        }
+        return true;
+      });
+
+      if(filteredData.length === 0) { alert('目前無符合篩選條件的教育訓練資料可供匯出！'); return; }
+
+      // 建立 CSV 標頭，支援中文顯示（BOM: ﻿）
+      let csvContent = "\uFEFF" + "廠區,訓練人員,課程名稱,訓練日期,訓練講師\n";
+      
+      // 填入資料行
+      filteredData.forEach((rowObj) => {
+        let row = [
+          rowObj.factory || '',
+          rowObj.workers || '',
+          rowObj.course || '',
+          rowObj.date || '',
+          rowObj.teacher || ''
+        ].map(text => `"\${String(text).replace(/"/g, '""')}"`).join(",");
+        csvContent += row + "\n";
+      });
+
+      // 產生 Blob 物件並觸發下載
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", \`教育訓練紀錄報表_\${Date.now()}.csv\`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }, { onlyOnce: true });
   };
 
 
