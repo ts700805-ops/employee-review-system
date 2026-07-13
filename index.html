@@ -1683,6 +1683,61 @@
   };
 
 
+// 匯出 CSV 檔案邏輯
+  window.downloadTrainingCSV = () => {
+    const fFactory = document.getElementById('fEduFactory').value;
+    const fCourse = document.getElementById('fEduCourse').value;
+    const fDate = document.getElementById('fEduDate').value;
+    const fWorker = document.getElementById('fEduWorker').value;
+    const fTeacher = document.getElementById('fEduTeacher').value;
+
+    onValue(ref(db, 'training_records'), (snapshot) => {
+      const rawData = snapshot.val() || {};
+      let dataArray = [];
+      for(let k in rawData) { dataArray.push(rawData[k]); }
+      dataArray.sort((a, b) => b.key - a.key);
+
+      let filteredData = dataArray.filter(item => {
+        if(fFactory && item.factory !== fFactory) return false;
+        if(fCourse && item.course !== fCourse) return false;
+        if(fDate && item.date !== fDate) return false;
+        if(fTeacher && item.teacher !== fTeacher) return false;
+        if(fWorker) {
+          const arr = (item.workers || "").split(',').map(w => w.trim());
+          if(!arr.includes(fWorker)) return false;
+        }
+        return true;
+      });
+
+      if(filteredData.length === 0) { alert('目前無符合篩選條件的教育訓練資料可供匯出！'); return; }
+
+      // 建立 CSV 標頭，支援中文顯示（BOM: ﻿）
+      let csvContent = "\uFEFF" + "廠區,訓練人員,課程名稱,訓練日期,訓練講師\n";
+      
+      // 填入資料行
+      filteredData.forEach((rowObj) => {
+        let row = [
+          rowObj.factory || '',
+          rowObj.workers || '',
+          rowObj.course || '',
+          rowObj.date || '',
+          rowObj.teacher || ''
+        ].map(text => `"\${String(text).replace(/"/g, '""')}"`).join(",");
+        csvContent += row + "\n";
+      });
+
+      // 產生 Blob 物件並觸發下載
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", \`教育訓練紀錄報表_\${Date.now()}.csv\`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }, { onlyOnce: true });
+  };
+
+
   showPage('home');
 </script>
 </body>
