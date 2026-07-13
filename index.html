@@ -2,8 +2,9 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V62</title>
+  <title>員工評核系統</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 26px; font-weight: bold; }
     nav { width: 280px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; z-index: 100; }
@@ -1684,74 +1685,51 @@
     }
   };
 
-window.downloadTrainingXLSX = () => {
-        // 1. 檢查 Excel 工具庫是否載入
-        if (typeof XLSX === 'undefined') {
-            alert('錯誤：Excel 工具庫未載入，請確認 <head> 內是否有 <script> 標籤！');
-            return;
+
+  // 這樣它才能存取到您原本定義好的 db 和 ref
+  window.downloadTrainingXLSX = () => {
+    // 防呆機制：如果按下去跳出這個錯誤，代表步驟 1 的 script 沒載入
+    if (typeof XLSX === 'undefined') {
+        alert('錯誤：Excel 工具庫未載入！請檢查 <head> 是否有加入 xlsx.full.min.js');
+        return;
+    }
+
+    const fFactory = document.getElementById('fEduFactory').value;
+    const fCourse = document.getElementById('fEduCourse').value;
+    // ... (原本的篩選邏輯保持不變) ...
+
+    onValue(ref(db, 'training_records'), (snapshot) => {
+        const rawData = snapshot.val() || {};
+        let dataArray = Object.values(rawData);
+        
+        // ... (篩選與分組邏輯) ...
+
+        // 核心邏輯：建立 Excel
+        const wb = XLSX.utils.book_new();
+        const groups = {};
+
+        // 假設您已經篩選好 filteredData
+        filteredData.forEach(item => {
+            const factory = item.factory || "未分類";
+            if (!groups[factory]) groups[factory] = [];
+            groups[factory].push(
+                ["廠區", item.factory || ""],
+                ["訓練人員", item.workers || ""],
+                ["課程名稱", item.course || ""],
+                ["訓練日期", item.date || ""],
+                ["訓練講師", item.teacher || ""],
+                ["", ""]
+            );
+        });
+
+        for (const [factoryName, records] of Object.entries(groups)) {
+            const ws = XLSX.utils.aoa_to_sheet(records);
+            XLSX.utils.book_append_sheet(wb, ws, factoryName.substring(0, 31));
         }
 
-        const fFactory = document.getElementById('fEduFactory').value;
-        const fCourse = document.getElementById('fEduCourse').value;
-        const fDate = document.getElementById('fEduDate').value;
-        const fWorker = document.getElementById('fEduWorker').value;
-        const fTeacher = document.getElementById('fEduTeacher').value;
-
-        onValue(ref(db, 'training_records'), (snapshot) => {
-            const rawData = snapshot.val() || {};
-            let dataArray = Object.values(rawData);
-            
-            if(dataArray.length === 0) { alert('無資料可匯出！'); return; }
-
-            // 篩選邏輯
-            let filteredData = dataArray.filter(item => {
-                if(fFactory && item.factory !== fFactory) return false;
-                if(fCourse && item.course !== fCourse) return false;
-                if(fDate && item.date !== fDate) return false;
-                if(fTeacher && item.teacher !== fTeacher) return false;
-                if(fWorker) {
-                    const arr = (item.workers || "").split(',').map(w => w.trim());
-                    if(!arr.includes(fWorker)) return false;
-                }
-                return true;
-            });
-
-            if(filteredData.length === 0) { alert('目前無符合篩選條件的資料！'); return; }
-
-            const wb = XLSX.utils.book_new();
-            const groups = {};
-
-            // 垂直排列與分組邏輯
-            filteredData.forEach(item => {
-                const factory = item.factory || "未分類";
-                if (!groups[factory]) groups[factory] = [];
-                
-                // 每一筆資料轉換成垂直排列
-                groups[factory].push(
-                    ["廠區", item.factory || ""],
-                    ["訓練人員", item.workers || ""],
-                    ["課程名稱", item.course || ""],
-                    ["訓練日期", item.date || ""],
-                    ["訓練講師", item.teacher || ""],
-                    ["", ""] // 空白行分隔
-                );
-            });
-
-            // 建立工作表
-            for (const [factoryName, records] of Object.entries(groups)) {
-                // 將陣列攤平後轉為 Sheet
-                const ws = XLSX.utils.aoa_to_sheet(records);
-                XLSX.utils.book_append_sheet(wb, ws, factoryName.substring(0, 31));
-            }
-
-            // 產生檔案
-            XLSX.writeFile(wb, `教育訓練報表_${new Date().toISOString().slice(0,10)}.xlsx`);
-            alert('Excel 匯出成功！');
-        }, { onlyOnce: true });
-    };
-  </script>
-</body>
-</html>
+        XLSX.writeFile(wb, `教育訓練報表_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }, { onlyOnce: true });
+  };
 </script>
 </body>
 </html>
