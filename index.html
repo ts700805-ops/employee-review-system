@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>員工評核系統 - V56</title>
+  <title>員工評核系統 - V58</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f8fafc; color: #000; font-size: 26px; font-weight: bold; }
     nav { width: 280px; background: #e2e8f0; color: #000; height: 100vh; padding: 20px; border-right: 2px solid #cbd5e1; position: fixed; z-index: 100; }
@@ -43,7 +43,7 @@
 <body>
 
 <nav>
-  <div class="version">版本: 20260712-56</div>
+  <div class="version">版本: 20260712-58</div>
   <div onclick="showPage('home')">🏠 首頁</div>
   <div onclick="showPage('eval')">📊 技能評核進度表</div>
   <div onclick="showPage('skills')">📊 技能總表(⭐導師✓熟手◭半熟手)</div>
@@ -75,9 +75,10 @@
   window.currentEditTqPhotoBase64 = null;
   window.torqueFullSettings = {}; 
 
-  // 教育訓練紀錄區專用全域變數
+  // 教育訓練紀錄區專用全域變數與廠區預設清單
   window.currentEditEduKey = null;
   window.currentEditEduPhotoBase64 = null;
+  window.eduFactoryList = ['竹東廠', '模冠', '御弘', '宏田']; // 預設值保證不空白
   
   const categoryColors = { 
     "整理": "#ffdee2", "整頓": "#e0f2fe", "清掃": "#fff7ed", "清潔": "#dcfce7", "作法": "#fef08a", "紀律": "#fed7aa", "素養": "#f3e8ff", "安全": "#fee2e2" 
@@ -251,15 +252,23 @@
       initFreshmanPageData();
     } else if (page === 'training') {
       // ==========================================
-      // 📋 教育訓練紀錄區 獨立頁面設計 (V56)
+      // 📋 教育訓練紀錄區 V58
       // ==========================================
       content.innerHTML = `
         <h1>📋 教育訓練紀錄區</h1>
+
+        <div class="card" style="border-color: #f59e0b; background: #fffbeb;">
+          <h3>⚙️ 廠區下拉選單設定 (修改後即時生效)</h3>
+          <div style="display: flex; gap: 15px;">
+            <input type="text" id="eduFactoryListInput" placeholder="例如: 竹東廠, 模冠, 御弘, 宏田" style="flex: 1;">
+            <button class="btn" style="background: #f59e0b; padding: 10px 20px; font-size: 20px;" onclick="saveEduFactoryList()">💾 儲存廠區選項</button>
+          </div>
+        </div>
         
         <div class="card" style="border-color: #a855f7;">
           <h3>➕ 建立 / 編輯教育訓練紀錄 (最上方填寫區)</h3>
           <div style="display: flex; gap: 15px; margin-bottom: 12px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 150px;">廠區：<select id="eduFactory"><option value="">請選擇廠區</option><option value="頂埔廠">頂埔廠</option><option value="民生廠">民生廠</option><option value="海外廠">海外廠</option></select></div>
+            <div style="flex: 1; min-width: 150px;">廠區：<select id="eduFactory"><option value="">請選擇廠區</option></select></div>
             <div style="flex: 2; min-width: 250px;">課程名稱：<input type="text" id="eduCourse" placeholder="請輸入課程名稱"></div>
             <div style="flex: 1; min-width: 200px;">訓練日期：<input type="date" id="eduDate"></div>
             <div style="flex: 1; min-width: 200px;">訓練講師：<input type="text" id="eduTeacher" placeholder="講師姓名"></div>
@@ -281,7 +290,7 @@
         <div class="card" style="background: #f1f5f9; border-color: #000;">
           <h3>🔍 教育訓練紀錄複合篩選</h3>
           <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-            <select id="fEduFactory" style="width: auto; min-width: 150px;" onchange="renderTrainingList()"><option value="">所有廠區</option><option value="頂埔廠">頂埔廠</option><option value="民生廠">民生廠</option><option value="海外廠">海外廠</option></select>
+            <select id="fEduFactory" style="width: auto; min-width: 150px;" onchange="renderTrainingList()"><option value="">所有廠區</option></select>
             <select id="fEduCourse" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有課程</option></select>
             <select id="fEduDate" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有日期</option></select>
             <select id="fEduWorker" style="width: auto; min-width: 180px;" onchange="renderTrainingList()"><option value="">所有訓練人員</option></select>
@@ -661,9 +670,6 @@
   };
 
   window.savePerformanceRecord = () => {
-    const password = prompt("🚨 此項操作需權限，請輸入管理員密碼:");
-    if (password !== "0000") { alert("密碼錯誤，拒絕儲存！"); return; }
-
     const leader = document.getElementById('pfLeaderSelect').value;
     const name = document.getElementById('pfMemberSelect').value;
     const date = document.getElementById('pfDate').value;
@@ -759,9 +765,6 @@
   };
 
   window.saveInlinePerformance = (key, leader, name, existingPhoto) => {
-    const password = prompt("🚨 修改資料需進行權限驗證，請輸入密碼:");
-    if (password !== "0000") { alert("密碼錯誤，更新失敗！"); return; }
-
     const uDate = document.getElementById(`pf_inline_date_${key}`).value;
     const uScore = parseInt(document.getElementById(`pf_inline_score_${key}`).value);
     const uRecorder = document.getElementById(`pf_inline_recorder_${key}`).value;
@@ -782,9 +785,6 @@
   };
 
   window.loadToTopPerformanceEditor = (key, leader, name, date, score, recorder, contentDesc, photo) => {
-    const password = prompt("🚨 載入編輯資料需進行權限驗證，請輸入密碼:");
-    if (password !== "0000") { alert("密碼錯誤，拒絕加載！"); return; }
-
     window.currentEditPfKey = key; window.currentEditPfPhotoBase64 = photo;
     const pLeader = document.getElementById('pfLeaderSelect'); if(pLeader) pLeader.value = leader;
     
@@ -805,8 +805,6 @@
   };
 
   window.deletePerformanceRecord = (key) => {
-    const password = prompt("🚨 警告：此項目將從資料庫中永久刪除，請輸入確認密碼:");
-    if (password !== "0000") { alert("密碼錯誤，刪除程序終止！"); return; }
     if(confirm('確定要永久刪除此筆平日績效紀錄嗎？')) { remove(ref(db, `performance_records/${key}`)).then(() => { alert('資料已成功自雲端刪除！'); renderPerformance(); }); }
   };
 
@@ -883,9 +881,6 @@
   }
 
   window.addNewTorqueFactory = () => {
-    const password = prompt("🚨 新增全新自訂廠區，請輸入專屬密碼:");
-    if (password !== "123456") { alert("密碼錯誤！"); return; }
-
     const name = document.getElementById('newTqFactoryName').value.trim();
     if(!name) { alert("請填寫廠區名稱！"); return; }
 
@@ -896,9 +891,6 @@
   };
 
   window.deleteTorqueFactory = (factoryName) => {
-    const password = prompt(`🚨 警告！刪除[${factoryName}]將移除該廠區配置，請輸入確認密碼:`);
-    if (password !== "123456") { alert("密碼錯誤，拒絕刪除！"); return; }
-    
     if(confirm(`確定要完全抹除 [${factoryName}] 嗎？`)) {
       remove(ref(db, `torque_v46_settings/${factoryName}`)).then(() => {
         alert(`🎉 廠區 [${factoryName}] 設定已成功自雲端刪除！`);
@@ -907,9 +899,6 @@
   };
 
   window.saveTorqueFactoryPersonnel = (factoryName, type) => {
-    const password = prompt(`🚨 修改 [${factoryName}] 的人員名單，請輸入驗證密碼:`);
-    if (password !== "123456") { alert("密碼錯誤，拒絕儲存！"); return; }
-
     let val = "";
     if(type === 'workers') val = document.getElementById(`adm_workers_${factoryName}`).value.trim();
     if(type === 'checkers') val = document.getElementById(`adm_checkers_${factoryName}`).value.trim();
@@ -1008,9 +997,6 @@
   };
 
   window.saveTorqueRecord = () => {
-    const password = prompt("🚨 新增/修改藍芽扭力紀錄，請輸入專屬驗證密碼:");
-    if (password !== "123456") { alert("密碼錯誤，拒密儲存！"); return; }
-
     const order = document.getElementById('tqOrder').value.trim();
     const worker = document.getElementById('tqWorkerSelect').value;
     const checker = document.getElementById('tqCheckerSelect').value;
@@ -1141,9 +1127,6 @@
   };
 
   window.saveInlineTorque = (key, existingPhoto) => {
-    const password = prompt("🚨 格子直改儲存程式，請輸入密碼驗證:");
-    if (password !== "123456") { alert("密碼錯誤，拒絕儲存變更！"); return; }
-
     const uOrder = document.getElementById(`tq_inline_order_${key}`).value.trim();
     const uContent = document.getElementById(`tq_inline_content_${key}`).value.trim();
     const uWorker = document.getElementById(`tq_inline_worker_${key}`).value;
@@ -1167,9 +1150,6 @@
   };
 
   window.loadToTopTorqueEditor = (key, order, worker, checker, factory, date, checkContent, photo) => {
-    const password = prompt("🚨 拉回上方控制台編輯程序，請輸入密碼:");
-    if (password !== "123456") { alert("密碼錯誤，拒絕載入！"); return; }
-
     window.currentEditTqKey = key;
     window.currentEditTqPhotoBase64 = photo;
 
@@ -1186,8 +1166,6 @@
   };
 
   window.deleteTorqueRecord = (key) => {
-    const password = prompt("🚨 警告：此項目將從資料庫中永久抹除，請輸入確認密碼:");
-    if (password !== "123456") { alert("密碼錯誤，刪除無效！"); return; }
     if(confirm('確定要永久刪除此筆藍芽扭力紀錄嗎？')) {
       remove(ref(db, `torque_records/${key}`)).then(() => { alert('資料已成功自雲端刪除！'); renderTorqueList(); });
     }
@@ -1243,15 +1221,11 @@
   }
 
   window.addBatchFreshmen = () => {
-    const password = prompt("🚨 變更結構基礎設定，請輸入驗證密碼:");
-    if (password !== "0000") { alert("密碼錯誤，拒絕儲存！"); return; }
     const inputVal = document.getElementById('batchFreshmanNames').value.trim();
     set(ref(db, 'freshman_config/names'), inputVal).then(() => alert("🎉 新人基礎名單架構更新同步成功！"));
   };
 
   window.addBatchFreshmanSkills = () => {
-    const password = prompt("🚨 變更結構基礎設定，請輸入驗證密碼:");
-    if (password !== "0000") { alert("密碼錯誤，拒絕儲存！"); return; }
     const inputVal = document.getElementById('batchFreshmanSkills').value.trim();
     set(ref(db, 'freshman_config/skills'), inputVal).then(() => alert("🎉 通識技能主框架項目定義更新成功！"));
   };
@@ -1272,9 +1246,6 @@
   }
 
   window.saveFreshmanControlRecord = () => {
-    const password = prompt("🚨 使用控制台變更雲端數據，請輸入密碼:");
-    if (password !== "0000") { alert("密碼錯誤，拒絕儲存！"); return; }
-
     const name = document.getElementById('fmName').value.trim();
     const joinDate = document.getElementById('fmJoinDate').value;
     const checker = document.getElementById('fmChecker').value.trim();
@@ -1410,9 +1381,6 @@
   };
 
   window.saveFreshmanRowInline = (name) => {
-    const password = prompt(`🚨 確定要同步聯動更新 [${name}] 的通識考核格子數據嗎？請輸入密碼:`);
-    if (password !== "0000") { alert("密碼錯誤，放棄儲存！"); return; }
-
     const uJoinDate = document.getElementById(`cell_join_${name}`).value;
     const uFactory = document.getElementById(`cell_factory_${name}`).value;
     const uChecker = document.getElementById(`cell_check_${name}`).value.trim();
@@ -1440,8 +1408,15 @@
 
 
   // =========================================================================
-  // 📋 教育訓練紀錄區 核心邏輯 (V56 精密升級開發)
+  // 📋 教育訓練紀錄區 核心邏輯 (V58 精密升級開發 - 簡化廠區管理)
   // =========================================================================
+
+  window.saveEduFactoryList = () => {
+    const val = document.getElementById('eduFactoryListInput').value;
+    set(ref(db, 'training_settings/factory_list'), val).then(() => {
+      alert('🎉 廠區選項已成功儲存！下拉選單已同步更新！');
+    });
+  };
 
   function initTrainingPageData() {
     // 載入教育訓練人員名單暫存區
@@ -1449,6 +1424,28 @@
       const pad = document.getElementById('eduScratchpad');
       if (pad) { pad.value = s.val() || ""; }
     }, { onlyOnce: true });
+
+    // 載入廠區設定 (簡易逗號分隔字串)
+    onValue(ref(db, 'training_settings/factory_list'), (s) => {
+      let rawStr = s.val();
+      if(!rawStr) rawStr = "竹東廠, 模冠, 御弘, 宏田"; // 預設值，絕對不會空白
+      
+      const inputEl = document.getElementById('eduFactoryListInput');
+      if(inputEl) inputEl.value = rawStr;
+
+      // 拆解成陣列給全域變數使用
+      window.eduFactoryList = rawStr.split(',').map(x => x.trim()).filter(x => x);
+      
+      const eduFactory = document.getElementById('eduFactory');
+      if(eduFactory) eduFactory.innerHTML = '<option value="">請選擇廠區</option>' + window.eduFactoryList.map(f => `<option value="${f}">${f}</option>`).join('');
+
+      const fEduFactory = document.getElementById('fEduFactory');
+      if(fEduFactory) {
+        const savedVal = fEduFactory.value;
+        fEduFactory.innerHTML = '<option value="">所有廠區</option>' + window.eduFactoryList.map(f => `<option value="${f}">${f}</option>`).join('');
+        if (savedVal && window.eduFactoryList.includes(savedVal)) fEduFactory.value = savedVal;
+      }
+    });
 
     const today = new Date().toISOString().split('T')[0];
     const dateEl = document.getElementById('eduDate');
@@ -1616,7 +1613,7 @@
           const k = item.key;
           const photoBtnClass = item.photo ? "btn-action btn-has-photo" : "btn-action";
           
-          let fOptions = ['頂埔廠', '民生廠', '海外廠'];
+          let fOptions = [...window.eduFactoryList];
           if(item.factory && !fOptions.includes(item.factory)) fOptions.push(item.factory);
           let selectHtml = `<select id="edu_inline_factory_${k}" class="table-input" style="padding:2px; text-align:center;">` + fOptions.map(f => `<option value="${f}" ${item.factory===f?'selected':''}>${f}</option>`).join('') + `</select>`;
 
