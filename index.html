@@ -1684,7 +1684,7 @@ html_code = """<!DOCTYPE html>
   };
 
 // 匯出 Excel (TSV 格式，完全解決亂碼問題)
-  window.downloadTrainingCSV = () => {
+window.downloadTrainingXLSX = () => {
     const fFactory = document.getElementById('fEduFactory').value;
     const fCourse = document.getElementById('fEduCourse').value;
     const fDate = document.getElementById('fEduDate').value;
@@ -1692,49 +1692,56 @@ html_code = """<!DOCTYPE html>
     const fTeacher = document.getElementById('fEduTeacher').value;
 
     onValue(ref(db, 'training_records'), (snapshot) => {
-      const rawData = snapshot.val() || {};
-      let dataArray = [];
-      for(let k in rawData) { dataArray.push(rawData[k]); }
-      dataArray.sort((a, b) => b.key - a.key);
+        const rawData = snapshot.val() || {};
+        let dataArray = [];
+        for(let k in rawData) { dataArray.push(rawData[k]); }
+        dataArray.sort((a, b) => b.key - a.key);
 
-      let filteredData = dataArray.filter(item => {
-        if(fFactory && item.factory !== fFactory) return false;
-        if(fCourse && item.course !== fCourse) return false;
-        if(fDate && item.date !== fDate) return false;
-        if(fTeacher && item.teacher !== fTeacher) return false;
-        if(fWorker) {
-          const arr = (item.workers || "").split(',').map(w => w.trim());
-          if(!arr.includes(fWorker)) return false;
+        let filteredData = dataArray.filter(item => {
+            if(fFactory && item.factory !== fFactory) return false;
+            if(fCourse && item.course !== fCourse) return false;
+            if(fDate && item.date !== fDate) return false;
+            if(fTeacher && item.teacher !== fTeacher) return false;
+            if(fWorker) {
+                const arr = (item.workers || "").split(',').map(w => w.trim());
+                if(!arr.includes(fWorker)) return false;
+            }
+            return true;
+        });
+
+        if(filteredData.length === 0) { alert('目前無符合篩選條件的資料！'); return; }
+
+        // 建立一個新的 Excel 工作簿
+        const wb = XLSX.utils.book_new();
+
+        // 1. 將資料依照「廠區」分組
+        const groups = {};
+        filteredData.forEach(item => {
+            const factory = item.factory || "未分類";
+            if (!groups[factory]) groups[factory] = [];
+            
+            // 整理要顯示的欄位標題
+            groups[factory].push({
+                "廠區": item.factory,
+                "訓練人員": item.workers,
+                "課程名稱": item.course,
+                "訓練日期": item.date,
+                "訓練講師": item.teacher
+            });
+        });
+
+        // 2. 為每個分組建立一個工作表 (Sheet)
+        for (const [factoryName, rows] of Object.entries(groups)) {
+            const ws = XLSX.utils.json_to_sheet(rows);
+            // 將工作表加入工作簿，名稱設為該廠區名稱
+            XLSX.utils.book_append_sheet(wb, ws, factoryName.substring(0, 31)); // Excel 工作表名稱限制 31 字
         }
-        return true;
-      });
 
-      if(filteredData.length === 0) { alert('目前無符合篩選條件的教育訓練資料可供匯出！'); return; }
-
-      // 使用 Tab 分隔 (TSV)，這在 Excel 中最不容易發生亂碼
-      let content = "\uFEFF" + "廠區\t訓練人員\t課程名稱\t訓練日期\t訓練講師\n";
-      
-      filteredData.forEach((rowObj) => {
-        let row = [
-          rowObj.factory || '',
-          rowObj.workers || '',
-          rowObj.course || '',
-          rowObj.date || '',
-          rowObj.teacher || ''
-        ].map(text => `"${String(text).replace(/"/g, '""')}"`).join("\t"); // 改為用 Tab 分隔
-        content += row + "\n";
-      });
-
-      // 設定 MIME 類型為 Excel 可識別格式
-      const blob = new Blob([content], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.setAttribute("download", `教育訓練紀錄報表_${Date.now()}.xls`); // 改為 .xls
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+        // 3. 觸發下載
+        XLSX.writeFile(wb, `教育訓練報表_${new Date().toISOString().slice(0,10)}.xlsx`);
     }, { onlyOnce: true });
-  };
+};
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   showPage('home');
 </script>
