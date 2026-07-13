@@ -1711,7 +1711,7 @@
 
       if(filteredData.length === 0) { alert('目前無符合篩選條件的教育訓練資料可供匯出！'); return; }
 
-      // 建立 CSV 標頭，支援中文顯示（BOM: ﻿）
+      // 建立 CSV 標頭，支援中文顯示（BOM: \uFEFF）
       let csvContent = "\uFEFF" + "廠區,訓練人員,課程名稱,訓練日期,訓練講師\n";
       
       // 填入資料行
@@ -1722,7 +1722,7 @@
           rowObj.course || '',
           rowObj.date || '',
           rowObj.teacher || ''
-        ].map(text => `"\${String(text).replace(/"/g, '""')}"`).join(",");
+        ].map(text => `"${String(text).replace(/"/g, '""')}"`).join(",");
         csvContent += row + "\n";
       });
 
@@ -1730,13 +1730,12 @@
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.setAttribute("download", \`教育訓練紀錄報表_\${Date.now()}.csv\`);
+      link.setAttribute("download", `教育訓練紀錄報表_${Date.now()}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     }, { onlyOnce: true });
   };
-
 
   showPage('home');
 </script>
