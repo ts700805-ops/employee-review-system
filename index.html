@@ -1686,48 +1686,56 @@
   };
 
 
-  // 這樣它才能存取到您原本定義好的 db 和 ref
-  window.downloadTrainingXLSX = () => {
-    // 防呆機制：如果按下去跳出這個錯誤，代表步驟 1 的 script 沒載入
-    if (typeof XLSX === 'undefined') {
-        alert('錯誤：Excel 工具庫未載入！請檢查 <head> 是否有加入 xlsx.full.min.js');
-        return;
-    }
-
+// 匯出 CSV 檔案邏輯 (最穩定版本)
+  window.downloadTrainingCSV = () => {
     const fFactory = document.getElementById('fEduFactory').value;
     const fCourse = document.getElementById('fEduCourse').value;
-    // ... (原本的篩選邏輯保持不變) ...
+    const fDate = document.getElementById('fEduDate').value;
+    const fWorker = document.getElementById('fEduWorker').value;
+    const fTeacher = document.getElementById('fEduTeacher').value;
 
     onValue(ref(db, 'training_records'), (snapshot) => {
         const rawData = snapshot.val() || {};
         let dataArray = Object.values(rawData);
-        
-        // ... (篩選與分組邏輯) ...
+        dataArray.sort((a, b) => b.key - a.key);
 
-        // 核心邏輯：建立 Excel
-        const wb = XLSX.utils.book_new();
-        const groups = {};
-
-        // 假設您已經篩選好 filteredData
-        filteredData.forEach(item => {
-            const factory = item.factory || "未分類";
-            if (!groups[factory]) groups[factory] = [];
-            groups[factory].push(
-                ["廠區", item.factory || ""],
-                ["訓練人員", item.workers || ""],
-                ["課程名稱", item.course || ""],
-                ["訓練日期", item.date || ""],
-                ["訓練講師", item.teacher || ""],
-                ["", ""]
-            );
+        let filteredData = dataArray.filter(item => {
+            if(fFactory && item.factory !== fFactory) return false;
+            if(fCourse && item.course !== fCourse) return false;
+            if(fDate && item.date !== fDate) return false;
+            if(fTeacher && item.teacher !== fTeacher) return false;
+            if(fWorker) {
+                const arr = (item.workers || "").split(',').map(w => w.trim());
+                if(!arr.includes(fWorker)) return false;
+            }
+            return true;
         });
 
-        for (const [factoryName, records] of Object.entries(groups)) {
-            const ws = XLSX.utils.aoa_to_sheet(records);
-            XLSX.utils.book_append_sheet(wb, ws, factoryName.substring(0, 31));
-        }
+        if(filteredData.length === 0) { alert('目前無符合篩選條件的教育訓練資料可供匯出！'); return; }
 
-        XLSX.writeFile(wb, `教育訓練報表_${new Date().toISOString().slice(0,10)}.xlsx`);
+        // \uFEFF 是解決 Excel 中文亂碼的關鍵 (BOM)
+        let csvContent = "\uFEFF" + "廠區,訓練人員,課程名稱,訓練日期,訓練講師\n";
+        
+        filteredData.forEach((rowObj) => {
+            // 使用陣列存放資料，並用逗號隔開
+            let row = [
+                rowObj.factory || '',
+                rowObj.workers || '',
+                rowObj.course || '',
+                rowObj.date || '',
+                rowObj.teacher || ''
+            ].map(text => `"${String(text).replace(/"/g, '""')}"`).join(",");
+            csvContent += row + "\n";
+        });
+
+        // 下載檔案
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", `教育訓練紀錄報表_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }, { onlyOnce: true });
   };
 </script>
